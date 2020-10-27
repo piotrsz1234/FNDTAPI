@@ -60,5 +60,11 @@ namespace FNDTAPI.DataModels.Calendar {
 		[BsonRepresentation (BsonType.String)]
 		public Guid Category { get; set; }
 
+		/// <summary>
+		/// Email of a person, who created Calendar Event
+		/// </summary>
+		[BsonRequired]
+		public string CreatorEmail { get; set; }
+
 	}
 }
