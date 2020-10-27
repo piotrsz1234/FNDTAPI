@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 
 namespace FNDTAPI {
 	public class Startup {
@@ -22,6 +23,8 @@ namespace FNDTAPI {
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices (IServiceCollection services) {
 			services.AddControllers ();
+			MongoClient mongoClient = new MongoClient (Configuration.GetSection ("MongoDBConnectionString").Get<string> ());
+
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
