@@ -66,5 +66,11 @@ namespace FNDTAPI.DataModels.Calendar {
 		[BsonRequired]
 		public string CreatorEmail { get; set; }
 
+		public bool AreValuesCorrect() {
+			if (string.IsNullOrWhiteSpace (Name) || string.IsNullOrWhiteSpace (ForWho) || string.IsNullOrWhiteSpace (Location) || Category == Guid.Empty || WhenEnds < WhenBegins)
+				return false;
+			return true;
+		}
+
 	}
 }

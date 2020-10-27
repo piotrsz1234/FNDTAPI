@@ -32,5 +32,12 @@ namespace FNDTAPI.DataModels.Calendar {
 		/// </summary>
 		[BsonRequired]
 		public string Owner { get; set; }
+
+		public bool AreValueCorrect() {
+			if (string.IsNullOrWhiteSpace (Owner) || string.IsNullOrWhiteSpace (Name))
+				return false;
+			return true;
+		}
+
 	}
 }

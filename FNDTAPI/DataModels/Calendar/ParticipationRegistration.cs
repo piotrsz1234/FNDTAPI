@@ -28,5 +28,11 @@ namespace FNDTAPI.DataModels.Calendar {
 		[BsonRepresentation (BsonType.String)]
 		public Guid CalendarEventID { get; set; }
 
+		public bool AreValuesCorrect() {
+			if (string.IsNullOrWhiteSpace (User) || CalendarEventID == Guid.Empty)
+				return false;
+			return true;
+		}
+
 	}
 }
