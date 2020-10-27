@@ -54,10 +54,11 @@ namespace FNDTAPI.DataModels.Calendar {
 		[BsonRepresentation(BsonType.Boolean)]
 		public bool IsForDedicatedGroup { get; set; }
 		/// <summary>
-		/// Category of the CalendarEvent
+		/// Guid of the category of the CalendarEvent
 		/// </summary>
 		[BsonRequired]
-		public CalendarEventCategory Category { get; set; }
+		[BsonRepresentation (BsonType.String)]
+		public Guid Category { get; set; }
 
 	}
 }
