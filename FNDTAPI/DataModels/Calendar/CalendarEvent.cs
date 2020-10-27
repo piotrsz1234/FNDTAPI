@@ -22,6 +22,7 @@ namespace FNDTAPI.DataModels.Calendar {
 		public string Name { get; set; }
 		/// <summary>
 		/// For who is Event organized.
+		/// If Event is for dedicated group, then it contains emails of possible participants. Otherwise it is name of one of natives groups.
 		/// </summary>
 		[BsonRequired]
 		public string ForWho { get; set; }
@@ -47,6 +48,16 @@ namespace FNDTAPI.DataModels.Calendar {
 		/// </summary>
 		[BsonRepresentation (BsonType.String)]
 		public Guid TaskListID { get; set; }
+		/// <summary>
+		/// Is Event only for native group or only for selected people
+		/// </summary>
+		[BsonRepresentation(BsonType.Boolean)]
+		public bool IsForDedicatedGroup { get; set; }
+		/// <summary>
+		/// Category of the CalendarEvent
+		/// </summary>
+		[BsonRequired]
+		public CalendarEventCategory Category { get; set; }
 
 	}
 }

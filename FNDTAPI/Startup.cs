@@ -36,6 +36,7 @@ namespace FNDTAPI {
 			services.AddSingleton (database.GetCollection<TaskList> (Configuration.GetValue<string> ("TaskListCollectionName")));
 			services.AddSingleton (database.GetCollection<Task> (Configuration.GetValue<string> ("TaskCollectionName")));
 			services.AddSingleton (database.GetCollection<PersonTaskCompletionDeclaration> (Configuration.GetValue<string> ("PersonTaskCompletionDeclarationCollectionName")));
+			services.AddSingleton (database.GetCollection<CalendarEventCategory> (Configuration.GetValue<string> ("CalendarEventCategoryCollectionName")));
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
