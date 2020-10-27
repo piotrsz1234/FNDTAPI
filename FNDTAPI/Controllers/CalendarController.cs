@@ -24,6 +24,8 @@ namespace FNDTAPI.Controllers {
 		[HttpPost]
 		[Route ("events")]
 		public async Task<IActionResult> AddCalendarEventAsync (CalendarEvent calendarEvent, [FromServices] IMongoCollection<CalendarEvent> mongoCollection) {
+			if (calendarEvent == null || !calendarEvent.AreValuesCorrect ())
+				return new JsonResult (new { Type = "Error", Details = "CalendarEventCategory is null or it's properties are empty!" });
 			calendarEvent.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (calendarEvent);
 			return new JsonResult (new { CalendarEventID = calendarEvent.ID });
@@ -80,6 +82,8 @@ namespace FNDTAPI.Controllers {
 		[HttpPatch]
 		[Route ("events")]
 		public async Task<IActionResult> UpdateCalendarEventAsync (CalendarEvent calendarEvent, [FromServices] IMongoCollection<CalendarEvent> mongoCollection) {
+			if (calendarEvent == null || !calendarEvent.AreValuesCorrect ())
+				return new JsonResult (new { Type = "Error", Details = "CalendarEventCategory is null or it's properties are empty!" });
 			CalendarEvent currentValue = await mongoCollection.FirstOrDefaultAsync (x => x.ID == calendarEvent.ID);
 			if (currentValue == null) return NotFound ();
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == calendarEvent.ID, Extensions.GenerateUpdateDefinition<CalendarEvent> (currentValue, calendarEvent));
@@ -97,7 +101,7 @@ namespace FNDTAPI.Controllers {
 		[HttpGet]
 		[Route ("categories")]
 		public async Task<IActionResult> GetCategoriesAsync (string group, string email, [FromServices] IMongoCollection<CalendarEventCategory> mongoCollection) {
-			IAsyncCursor<CalendarEventCategory> cursor = await mongoCollection.FindAsync (x => x.Owner.Contains(group) || x.Owner == email);
+			IAsyncCursor<CalendarEventCategory> cursor = await mongoCollection.FindAsync (x => x.Owner.Contains (group) || x.Owner == email);
 			return new JsonResult (await cursor.ToListAsync ());
 		}
 
@@ -106,10 +110,12 @@ namespace FNDTAPI.Controllers {
 		/// </summary>
 		/// <param name="category">Value to be added.</param>
 		/// <param name="mongoCollection">Provided by Dependency Injection.</param>
-		/// <returns>Json with ID of the added value.</returns>
+		/// <returns>Json with ID of the added value or information about error.</returns>
 		[HttpPost]
 		[Route ("categories")]
 		public async Task<IActionResult> AddCategoryAsync (CalendarEventCategory category, [FromServices] IMongoCollection<CalendarEventCategory> mongoCollection) {
+			if (category == null || !category.AreValueCorrect ())
+				return new JsonResult (new { Type = "Error", Details = "CalendarEventCategory is null or it's properties are empty!" });
 			category.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (category);
 			return new JsonResult (new { CalendarEventCategoryID = category.ID });
@@ -124,11 +130,58 @@ namespace FNDTAPI.Controllers {
 		[HttpPatch]
 		[Route ("categories")]
 		public async Task<IActionResult> UpdateCategoryAsync (CalendarEventCategory category, [FromServices] IMongoCollection<CalendarEventCategory> mongoCollection) {
+			if (category == null || !category.AreValueCorrect ())
+				return new JsonResult (new { Type = "Error", Details = "CalendarEventCategory is null or it's properties are empty!" });
 			CalendarEventCategory currentValue = await mongoCollection.FirstOrDefaultAsync (x => x.ID == category.ID);
 			if (currentValue == null) return NotFound ();
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == category.ID, Extensions.GenerateUpdateDefinition<CalendarEventCategory> (currentValue, category));
 			if (result.IsAcknowledged) return Ok ();
 			else return new JsonResult (new { Type = "Error", Details = "Value wasn't updated!" });
+		}
+
+		/// <summary>
+		/// [HTTP POST] Adds <see cref="ParticipationRegistration"/> to database.
+		/// </summary>
+		/// <param name="registration">User's registration</param>
+		/// <param name="mongoCollection">Provided by Dependency Injection</param>
+		/// <returns>Returns Guid of added value.</returns>
+		[HttpPost]
+		[Route ("participation")]
+		public async Task<IActionResult> RegisterParticiationDeclarationAsync (ParticipationRegistration registration, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
+			if (registration == null || !registration.AreValuesCorrect ())
+				return new JsonResult (new { Type = "Error", Details = "Registration data was not valid!" });
+			registration.ID = Guid.NewGuid ();
+			long result = await mongoCollection.CountDocumentsAsync (x => x.CalendarEventID == registration.CalendarEventID && x.User == registration.User);
+			if (result > 0) return new JsonResult (new { Type = "Warming", Details = "Such declaration already exists!" });
+			await mongoCollection.InsertOneAsync (registration);
+			return new JsonResult (new { ParticipationRegistrationID = registration.ID });
+		}
+
+		/// <summary>
+		/// [HTTP DELETE] Deletes from database given <see cref="ParticipationRegistration"/>.
+		/// </summary>
+		/// <param name="registration">Registration to deletion.</param>
+		/// <param name="mongoCollection">Provided by Dependency Injection.</param>
+		/// <returns>Returns 200OK if finds given registration, otherwise 404NotFound.</returns>
+		[HttpDelete]
+		[Route ("participation")]
+		public async Task<IActionResult> RemoveParticiationDeclarationAsync (ParticipationRegistration registration, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
+			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.CalendarEventID == registration.CalendarEventID && x.User == registration.User);
+			if (result.IsAcknowledged) return Ok ();
+			else return NotFound ();
+		}
+
+		/// <summary>
+		/// [HTTP GET] Gets from database list of <see cref="ParticipationRegistration"/>s.
+		/// </summary>
+		/// <param name="eventID"><see cref="Guid"/> of the event</param>
+		/// <param name="mongoCollection">Provided by Dependency Injection</param>
+		/// <returns>JsonResult with list of registrations.</returns>
+		[HttpGet]
+		[Route ("participation")]
+		public async Task<IActionResult> GetParticiationDeclarations (Guid eventID, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
+			IAsyncCursor<ParticipationRegistration> cursor = await mongoCollection.FindAsync (x => x.CalendarEventID == eventID);
+			return new JsonResult (await cursor.ToListAsync ());
 		}
 
 	}
