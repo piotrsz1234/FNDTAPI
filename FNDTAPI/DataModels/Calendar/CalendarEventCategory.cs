@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Threading.Tasks;
+using FNDTAPI.DataModels.Shared;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -24,11 +21,11 @@ namespace FNDTAPI.DataModels.Calendar {
 		/// Color of the Category.
 		/// </summary>
 		[BsonRequired]
-		public Color Color { get; set; }
+		public SerializableColor Color { get; set; }
 		/// <summary>
 		/// Is category own by single person or native group.
 		/// </summary>
-		[BsonRepresentation(BsonType.Boolean)]
+		[BsonRepresentation (BsonType.Boolean)]
 		public bool IsPersonal { get; set; }
 		/// <summary>
 		/// Identifier of a owner of category.

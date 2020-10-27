@@ -46,7 +46,7 @@ namespace FNDTAPI {
 			}
 
 			app.UseHttpsRedirection ();
-
+			
 			app.UseRouting ();
 
 			app.UseAuthorization ();
