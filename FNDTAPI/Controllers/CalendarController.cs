@@ -25,7 +25,7 @@ namespace FNDTAPI.Controllers {
 		[Route ("events")]
 		public async Task<IActionResult> AddCalendarEventAsync (CalendarEvent calendarEvent, [FromServices] IMongoCollection<CalendarEvent> mongoCollection) {
 			if (calendarEvent == null || !calendarEvent.AreValuesCorrect ())
-				return new JsonResult (new { Type = "Error", Details = "CalendarEventCategory is null or it's properties are empty!" });
+				return new JsonResult (new { Type = "Error", Details = "CalendarEvent is null or it's properties are empty!" });
 			calendarEvent.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (calendarEvent);
 			return new JsonResult (new { CalendarEventID = calendarEvent.ID });
@@ -83,7 +83,7 @@ namespace FNDTAPI.Controllers {
 		[Route ("events")]
 		public async Task<IActionResult> UpdateCalendarEventAsync (CalendarEvent calendarEvent, [FromServices] IMongoCollection<CalendarEvent> mongoCollection) {
 			if (calendarEvent == null || !calendarEvent.AreValuesCorrect ())
-				return new JsonResult (new { Type = "Error", Details = "CalendarEventCategory is null or it's properties are empty!" });
+				return new JsonResult (new { Type = "Error", Details = "CalendarEvent is null or it's properties are empty!" });
 			CalendarEvent currentValue = await mongoCollection.FirstOrDefaultAsync (x => x.ID == calendarEvent.ID);
 			if (currentValue == null) return NotFound ();
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == calendarEvent.ID, Extensions.GenerateUpdateDefinition<CalendarEvent> (currentValue, calendarEvent));
