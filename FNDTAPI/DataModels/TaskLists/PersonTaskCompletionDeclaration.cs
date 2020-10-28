@@ -26,5 +26,11 @@ namespace FNDTAPI.DataModels.TaskLists {
 		[BsonRepresentation (BsonType.String)]
 		public Guid Task { get; set; }
 
+		public bool AreValuesCorrect() {
+			if (string.IsNullOrWhiteSpace (Person) || Task == Guid.Empty)
+				return false;
+			return true;
+		}
+
 	}
 }

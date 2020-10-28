@@ -33,5 +33,10 @@ namespace FNDTAPI.DataModels.TaskLists {
 		[BsonRepresentation (BsonType.String)]
 		public Guid OwnerID { get; set; }
 
+		public bool AreValuesCorrect() {
+			if (string.IsNullOrWhiteSpace (Text) || OwnerID == Guid.Empty) return false;
+			return true;
+		}
+
 	}
 }

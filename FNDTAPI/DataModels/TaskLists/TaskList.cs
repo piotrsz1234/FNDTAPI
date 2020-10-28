@@ -23,5 +23,15 @@ namespace FNDTAPI.DataModels.TaskLists {
 		/// Is Task List belongs to person or Calendar Event.
 		/// </summary>
 		public bool IsPersonal { get; set; }
+		/// <summary>
+		/// Contains information about owner/creator.
+		/// </summary>
+		public string Owner { get; set; }
+
+		public bool AreValuesCorrect() {
+			if (string.IsNullOrWhiteSpace (Name)) return false;
+			return true;
+		}
+
 	}
 }
