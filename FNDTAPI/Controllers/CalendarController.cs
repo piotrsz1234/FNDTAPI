@@ -70,7 +70,7 @@ namespace FNDTAPI.Controllers {
 			DateTime ending = DateTime.Parse ($"{year}-{Extensions.GenerateTwoDigitMonth (month)}-31T23:59:59.99 Z");
 			IAsyncCursor<CalendarEvent> cursor = await mongoCollection.FindAsync (x => x.WhenBegins >= begining && x.WhenEnds <= ending);
 			List<CalendarEvent> temp = await cursor.ToListAsync ();
-			return new JsonResult (temp.Where (x => groups.Contains (x.ForWho) || x.ForWho.Contains (email)));
+			return new JsonResult (temp.Where (x => groups.Contains (x.ForWho) || x.ForWho.Contains (email) || x.ForWho.Contains (groups)));
 		}
 
 		/// <summary>
