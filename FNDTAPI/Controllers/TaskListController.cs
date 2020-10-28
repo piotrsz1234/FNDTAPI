@@ -21,7 +21,7 @@ namespace FNDTAPI.Controllers {
 				return new JsonResult (new { Type = "Error", Details = "TaskList is null or it's properties are empty!" });
 			taskList.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (taskList);
-			return new JsonResult (new { TaskListID = taskList.ID });
+			return new JsonResult (new { Type = "Success", Details = taskList.ID });
 		}
 
 		[HttpDelete]
@@ -31,8 +31,10 @@ namespace FNDTAPI.Controllers {
 			Guid taskListID = Guid.Parse (data["taskListID"]);
 			string owner = data["owner"];
 			TaskList temp = await (await mongoCollection.FindAsync (x => x.ID == taskListID)).FirstOrDefaultAsync ();
-			if (temp == null) return NotFound ();
-			if (temp.Owner != owner) return Forbid ();
+			if (temp == null)
+				return new JsonResult (new { Type = "Error", Details = "There's no TaskList with given ID!" });
+			if (temp.Owner != owner)
+				return new JsonResult (new { Type = "Error", Details = "You have not permission." });
 			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.ID == taskListID);
 			DeleteResult result2 = await taskCollection.DeleteManyAsync (x => x.OwnerID == taskListID);
 			List<DataModels.TaskLists.Task> list = await (await taskCollection.FindAsync (x => x.OwnerID == taskListID)).ToListAsync ();
@@ -49,8 +51,8 @@ namespace FNDTAPI.Controllers {
 				await eventsMongoCollection.UpdateOneAsync (x => x.ID == calendarEvent.ID, Extensions.GenerateUpdateDefinition (calendarEvent, newValue));
 			}
 			if (result.IsAcknowledged && result2.IsAcknowledged && removalOfDeclarations)
-				return Ok ();
-			else return NotFound ();
+				return new JsonResult (new { Type = "Success", Details = "" });
+			else return new JsonResult (new { Type = "Error", Details = "Something failed. Most likely some mentions of given TaskList were not removed." }); ;
 		}
 
 
@@ -70,7 +72,7 @@ namespace FNDTAPI.Controllers {
 				output.Add (await mongoCollection.FirstOrDefaultAsync (x => x.ID == calendarEvent.TaskListID));
 			}
 			output.RemoveAll (x => x == null);
-			return new JsonResult (new HashSet<TaskList> (output));
+			return new JsonResult (new { Type = "Success", Details = new HashSet<TaskList> (output) });
 		}
 
 		[HttpGet]
@@ -79,7 +81,10 @@ namespace FNDTAPI.Controllers {
 			if (eventID == Guid.Empty)
 				return new JsonResult (new { Type = "Error", Details = "Guid is empty!" });
 			CalendarEvent calendarEvent = await eventsMongoCollection.FirstOrDefaultAsync (x => x.ID == eventID);
-			return new JsonResult (await mongoCollection.FirstOrDefaultAsync (x => x.ID == calendarEvent.TaskListID));
+			return new JsonResult (new {
+				Type = "Success",
+				Details = await mongoCollection.FirstOrDefaultAsync (x => x.ID == calendarEvent.TaskListID)
+			});
 		}
 
 		[HttpPost]
@@ -89,8 +94,11 @@ namespace FNDTAPI.Controllers {
 			TaskList value = JsonConvert.DeserializeObject<TaskList> (data["taskList"]);
 			if (eventID == Guid.Empty)
 				return new JsonResult (new { Type = "Error", Details = "EventID is empty!" });
+			if (value == null || !value.AreValuesCorrect ())
+				return new JsonResult (new { Type = "Error", Details = "Sended taskList is null or has empty properties!" });
 			CalendarEvent calendarEvent = await eventsMongoCollection.FirstOrDefaultAsync (x => x.ID == eventID);
-			if (calendarEvent == null) return NotFound ();
+			if (calendarEvent == null)
+				return new JsonResult (new { Type = "Error", Details = "There's no Calendar Event with given eventID!" });
 			if (calendarEvent.TaskListID != Guid.Empty)
 				return new JsonResult (new { Type = "Error", Details = "Given Event already has the TaskList!" });
 			value.ID = Guid.NewGuid ();
@@ -98,7 +106,7 @@ namespace FNDTAPI.Controllers {
 			CalendarEvent newValue = calendarEvent;
 			newValue.TaskListID = value.ID;
 			await eventsMongoCollection.UpdateOneAsync (x => x.ID == eventID, Extensions.GenerateUpdateDefinition (calendarEvent, newValue));
-			return Ok ();
+			return new JsonResult (new { Type = "Success", Details = value.ID });
 		}
 
 		[HttpPatch]
@@ -108,11 +116,12 @@ namespace FNDTAPI.Controllers {
 				return new JsonResult (new { Type = "Error", Details = "TaskList is null or it's properties are empty!" });
 
 			TaskList currentValue = await mongoCollection.FirstOrDefaultAsync (x => x.ID == taskList.ID);
-			if (currentValue == null) return new JsonResult (new { Type = "Error", Details = "Sended TaskList to update has altered ID! Unable to update value!" });
+			if (currentValue == null)
+				return new JsonResult (new { Type = "Error", Details = "Sended TaskList to update has altered ID! Unable to update value!" });
 
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == taskList.ID, Extensions.GenerateUpdateDefinition (currentValue, taskList));
 
-			if (result.IsAcknowledged) return Ok ();
+			if (result.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" });
 			else return new JsonResult (new { Type = "Error", Details = "Update somehow failed!" });
 		}
 
@@ -123,7 +132,7 @@ namespace FNDTAPI.Controllers {
 				return new JsonResult (new { Type = "Error", Details = "Task is null or it's properties are empty!" });
 			task.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (task);
-			return new JsonResult (new { TaskID = task.ID });
+			return new JsonResult (new { Type = "Success", Details = task.ID });
 		}
 
 		[HttpDelete]
@@ -139,7 +148,7 @@ namespace FNDTAPI.Controllers {
 
 			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.ID == taskID);
 			DeleteResult result2 = await declarationsMongoCollection.DeleteManyAsync (x => x.Task == taskID);
-			if (result.IsAcknowledged && result2.IsAcknowledged) return Ok ();
+			if (result.IsAcknowledged && result2.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" });
 			else return new JsonResult (new { Type = "Error", Details = "Deletion failed for some reason!" });
 		}
 
@@ -155,7 +164,7 @@ namespace FNDTAPI.Controllers {
 
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == task.ID, Extensions.GenerateUpdateDefinition (currentValue, task));
 
-			if (result.IsAcknowledged) return Ok ();
+			if (result.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" });
 			else return new JsonResult (new { Type = "Error", Details = "Update somehow failed!" });
 		}
 
@@ -163,7 +172,7 @@ namespace FNDTAPI.Controllers {
 		[Route ("tasks")]
 		public async Task<IActionResult> GetTasksAsync (Guid taskListID, [FromServices] IMongoCollection<DataModels.TaskLists.Task> mongoCollection) {
 			IAsyncCursor<DataModels.TaskLists.Task> cursor = await mongoCollection.FindAsync (x => x.OwnerID == taskListID);
-			return new JsonResult (await cursor.ToListAsync ());
+			return new JsonResult (new { Type = "Success", Details = await cursor.ToListAsync () });
 		}
 
 		[HttpPost]
@@ -175,14 +184,14 @@ namespace FNDTAPI.Controllers {
 			if (task == null) return new JsonResult (new { Type = "Error", Details = "PersonTaskCompletionDeclaration has been created for wrong Task!" });
 			declaration.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (declaration);
-			return new JsonResult (new { DeclarationID = declaration.ID });
+			return new JsonResult (new { Type = "Success", Details = declaration.ID });
 		}
 
 		[HttpDelete]
 		[Route ("declarations")]
 		public async Task<IActionResult> DeleteDeclarationAsync (Dictionary<string, string> data, [FromServices] IMongoCollection<PersonTaskCompletionDeclaration> mongoCollection) {
 			Guid taskID = Guid.Parse (data["taskID"]);
-			string person = data["person"];
+			string person = data["owner"];
 			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.Person == person && x.Task == taskID);
 			if (result.IsAcknowledged) return Ok ();
 			else return NotFound ();
