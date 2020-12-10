@@ -2,6 +2,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 
@@ -49,13 +50,36 @@ namespace FNDTAPI {
 			return await temp.FirstOrDefaultAsync ();
 		}
 
+		/// <summary>
+		/// Converts number of a month to a string.
+		/// </summary>
+		/// <param name="t">Month's number</param>
+		/// <returns>String in which month is written with two digits.</returns>
 		public static string GenerateTwoDigitMonth(int t) {
 			if (t < 10) return $"0{t}";
 			else return t.ToString ();
 		}
 
+		/// <summary>
+		/// Generates copy of an instance.
+		/// </summary>
+		/// <typeparam name="T">Object's Type</typeparam>
+		/// <param name="val">Instance to copy.</param>
+		/// <returns>Copy of an instance.</returns>
 		public static T Copy<T> (this T val) {
 			return JsonConvert.DeserializeObject<T> (JsonConvert.SerializeObject (val));
+		}
+
+		public static JsonResult Success(this ControllerBase controller, object details) {
+			return new JsonResult (new { Type = "Success", Details = details });
+		}
+
+		public static JsonResult Error (this ControllerBase controller, string details) {
+			return new JsonResult (new { Type = "Error", Details = details });
+		}
+
+		public static JsonResult Warming (this ControllerBase controller, string details) {
+			return new JsonResult (new { Type = "Warming", Details = details });
 		}
 
 	}

@@ -18,10 +18,10 @@ namespace FNDTAPI.Controllers {
 		[Route ("tasklists")]
 		public async Task<IActionResult> AddTaskListAsync (TaskList taskList, [FromServices] IMongoCollection<TaskList> mongoCollection) {
 			if (taskList == null || !taskList.AreValuesCorrect ())
-				return new JsonResult (new { Type = "Error", Details = "TaskList is null or it's properties are empty!" });
+				return this.Error ("TaskList is null or it's properties are empty!");
 			taskList.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (taskList);
-			return new JsonResult (new { Type = "Success", Details = taskList.ID });
+			return this.Success (taskList.ID);
 		}
 
 		[HttpDelete]
@@ -32,9 +32,9 @@ namespace FNDTAPI.Controllers {
 			string owner = data["owner"];
 			TaskList temp = await (await mongoCollection.FindAsync (x => x.ID == taskListID)).FirstOrDefaultAsync ();
 			if (temp == null)
-				return new JsonResult (new { Type = "Error", Details = "There's no TaskList with given ID!" });
+				return this.Error ("There's no TaskList with given ID!");
 			if (temp.Owner != owner)
-				return new JsonResult (new { Type = "Error", Details = "You have not permission." });
+				return this.Error ("You have not permission.");
 			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.ID == taskListID);
 			DeleteResult result2 = await taskCollection.DeleteManyAsync (x => x.OwnerID == taskListID);
 			List<DataModels.TaskLists.Task> list = await (await taskCollection.FindAsync (x => x.OwnerID == taskListID)).ToListAsync ();
@@ -51,8 +51,8 @@ namespace FNDTAPI.Controllers {
 				await eventsMongoCollection.UpdateOneAsync (x => x.ID == calendarEvent.ID, Extensions.GenerateUpdateDefinition (calendarEvent, newValue));
 			}
 			if (result.IsAcknowledged && result2.IsAcknowledged && removalOfDeclarations)
-				return new JsonResult (new { Type = "Success", Details = "" });
-			else return new JsonResult (new { Type = "Error", Details = "Something failed. Most likely some mentions of given TaskList were not removed." }); ;
+				return this.Success ("");
+			else return this.Error ("Something failed. Most likely some mentions of given TaskList were not removed."); ;
 		}
 
 
@@ -72,19 +72,19 @@ namespace FNDTAPI.Controllers {
 				output.Add (await mongoCollection.FirstOrDefaultAsync (x => x.ID == calendarEvent.TaskListID));
 			}
 			output.RemoveAll (x => x == null);
-			return new JsonResult (new { Type = "Success", Details = new HashSet<TaskList> (output) });
+			return this.Success (new HashSet<TaskList> (output));
 		}
 
 		[HttpGet]
 		[Route ("tasklists")]
 		public async Task<IActionResult> GetEventsTaskListAsync (Guid eventID, [FromServices] IMongoCollection<TaskList> mongoCollection, [FromServices] IMongoCollection<CalendarEvent> eventsMongoCollection) {
 			if (eventID == Guid.Empty)
-				return new JsonResult (new { Type = "Error", Details = "Guid is empty!" });
+				return this.Error ("Guid is empty!");
 			CalendarEvent calendarEvent = await eventsMongoCollection.FirstOrDefaultAsync (x => x.ID == eventID);
 			return new JsonResult (new {
 				Type = "Success",
 				Details = await mongoCollection.FirstOrDefaultAsync (x => x.ID == calendarEvent.TaskListID)
-			});
+			);
 		}
 
 		[HttpPost]
@@ -93,46 +93,46 @@ namespace FNDTAPI.Controllers {
 			Guid eventID = Guid.Parse (data["eventID"]);
 			TaskList value = JsonConvert.DeserializeObject<TaskList> (data["taskList"]);
 			if (eventID == Guid.Empty)
-				return new JsonResult (new { Type = "Error", Details = "EventID is empty!" });
+				return this.Error ("EventID is empty!");
 			if (value == null || !value.AreValuesCorrect ())
-				return new JsonResult (new { Type = "Error", Details = "Sended taskList is null or has empty properties!" });
+				return this.Error ("Sended taskList is null or has empty properties!");
 			CalendarEvent calendarEvent = await eventsMongoCollection.FirstOrDefaultAsync (x => x.ID == eventID);
 			if (calendarEvent == null)
-				return new JsonResult (new { Type = "Error", Details = "There's no Calendar Event with given eventID!" });
+				return this.Error ("There's no Calendar Event with given eventID!");
 			if (calendarEvent.TaskListID != Guid.Empty)
-				return new JsonResult (new { Type = "Error", Details = "Given Event already has the TaskList!" });
+				return this.Error ("Given Event already has the TaskList!");
 			value.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (value);
 			CalendarEvent newValue = calendarEvent;
 			newValue.TaskListID = value.ID;
 			await eventsMongoCollection.UpdateOneAsync (x => x.ID == eventID, Extensions.GenerateUpdateDefinition (calendarEvent, newValue));
-			return new JsonResult (new { Type = "Success", Details = value.ID });
+			return this.Success (value.ID);
 		}
 
 		[HttpPatch]
 		[Route ("tasklists")]
 		public async Task<IActionResult> UpdateTaskListAsync (TaskList taskList, [FromServices] IMongoCollection<TaskList> mongoCollection) {
 			if (taskList == null || !taskList.AreValuesCorrect ())
-				return new JsonResult (new { Type = "Error", Details = "TaskList is null or it's properties are empty!" });
+				return this.Error ("TaskList is null or it's properties are empty!");
 
 			TaskList currentValue = await mongoCollection.FirstOrDefaultAsync (x => x.ID == taskList.ID);
 			if (currentValue == null)
-				return new JsonResult (new { Type = "Error", Details = "Sended TaskList to update has altered ID! Unable to update value!" });
+				return this.Error ("Sended TaskList to update has altered ID! Unable to update value!");
 
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == taskList.ID, Extensions.GenerateUpdateDefinition (currentValue, taskList));
 
-			if (result.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" });
-			else return new JsonResult (new { Type = "Error", Details = "Update somehow failed!" });
+			if (result.IsAcknowledged) return this.Success ("");
+			else return this.Error ("Update somehow failed!");
 		}
 
 		[HttpPost]
 		[Route ("tasks")]
 		public async Task<IActionResult> AddTaskAsync (DataModels.TaskLists.Task task, [FromServices] IMongoCollection<DataModels.TaskLists.Task> mongoCollection) {
 			if (task == null || !task.AreValuesCorrect ())
-				return new JsonResult (new { Type = "Error", Details = "Task is null or it's properties are empty!" });
+				return this.Error ("Task is null or it's properties are empty!");
 			task.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (task);
-			return new JsonResult (new { Type = "Success", Details = task.ID });
+			return this.Success (task.ID);
 		}
 
 		[HttpDelete]
@@ -141,53 +141,53 @@ namespace FNDTAPI.Controllers {
 			Guid taskID = Guid.Parse (data["taskID"]);
 			string owner = data["owner"];
 			DataModels.TaskLists.Task task = await mongoCollection.FirstOrDefaultAsync (x => x.ID == taskID);
-			if (task == null) return new JsonResult (new { Type = "Error", Details = "There's no such Task!" });
+			if (task == null) return this.Error ("There's no such Task!");
 			TaskList taskList = await taskListMongoCollection.FirstOrDefaultAsync (x => x.ID == task.ID);
 			if (taskList == null || (!taskList.Owner.Contains (owner) && !owner.Contains (taskList.Owner)))
-				return new JsonResult (new { Type = "Error", Details = "You don't have access to that Task!" });
+				return this.Error ("You don't have access to that Task!");
 
 			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.ID == taskID);
 			DeleteResult result2 = await declarationsMongoCollection.DeleteManyAsync (x => x.Task == taskID);
-			if (result.IsAcknowledged && result2.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" });
-			else return new JsonResult (new { Type = "Error", Details = "Deletion failed for some reason!" });
+			if (result.IsAcknowledged && result2.IsAcknowledged) return this.Success ("");
+			else return this.Error ("Deletion failed for some reason!");
 		}
 
 		[HttpPatch]
 		[Route ("tasks")]
 		public async Task<IActionResult> UpdateTaskAsync (DataModels.TaskLists.Task task, [FromServices] IMongoCollection<DataModels.TaskLists.Task> mongoCollection) {
 			if (task == null || !task.AreValuesCorrect ())
-				return new JsonResult (new { Type = "Error", Details = "Task is null or it's properties are empty!" });
+				return this.Error ("Task is null or it's properties are empty!");
 
 			DataModels.TaskLists.Task currentValue = await mongoCollection.FirstOrDefaultAsync (x => x.ID == task.ID);
 
-			if (currentValue == null) return new JsonResult (new { Type = "Error", Details = "Task's ID has been altered or such Task never existed! Update failed!" });
+			if (currentValue == null) return this.Error ("Task's ID has been altered or such Task never existed! Update failed!");
 
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == task.ID, Extensions.GenerateUpdateDefinition (currentValue, task));
 
-			if (result.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" });
-			else return new JsonResult (new { Type = "Error", Details = "Update somehow failed!" });
+			if (result.IsAcknowledged) return this.Success ("");
+			else return this.Error ("Update somehow failed!");
 		}
 
 		[HttpGet]
 		[Route ("tasks")]
 		public async Task<IActionResult> GetTasksAsync (Guid taskListID, [FromServices] IMongoCollection<DataModels.TaskLists.Task> mongoCollection) {
 			IAsyncCursor<DataModels.TaskLists.Task> cursor = await mongoCollection.FindAsync (x => x.OwnerID == taskListID);
-			return new JsonResult (new { Type = "Success", Details = await cursor.ToListAsync () });
+			return this.Success (await cursor.ToListAsync ());
 		}
 
 		[HttpPost]
 		[Route ("declarations")]
 		public async Task<IActionResult> AddTaskCompletionDeclarationAsync (PersonTaskCompletionDeclaration declaration, [FromServices] IMongoCollection<PersonTaskCompletionDeclaration> mongoCollection, [FromServices] IMongoCollection<DataModels.TaskLists.Task> tasksMongoCollection) {
 			if (declaration == null || !declaration.AreValuesCorrect ())
-				return new JsonResult (new { Type = "Error", Details = "PersonTaskCompletionDeclaration is null or it's properties are empty!" });
+				return this.Error ("PersonTaskCompletionDeclaration is null or it's properties are empty!");
 			DataModels.TaskLists.Task task = await tasksMongoCollection.FirstOrDefaultAsync (x => x.ID == declaration.Task);
-			if (task == null) return new JsonResult (new { Type = "Error", Details = "PersonTaskCompletionDeclaration has been created for wrong Task!" });
+			if (task == null) return this.Error ("PersonTaskCompletionDeclaration has been created for wrong Task!");
 			long howManyDeclarationForGiveTask = await mongoCollection.CountDocumentsAsync (x => x.Task == task.ID);
-			if(howManyDeclarationForGiveTask >= task.MaximumCountOfPeopleWhoCanDoIt)
-				return new JsonResult (new { Type = "Warming", Details = "You cannot complete that task, because there's maximum amount of people declared." });
+			if (howManyDeclarationForGiveTask >= task.MaximumCountOfPeopleWhoCanDoIt)
+				return this.Warming ("You cannot complete that task, because there's maximum amount of people declared.");
 			declaration.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (declaration);
-			return new JsonResult (new { Type = "Success", Details = declaration.ID });
+			return this.Success (declaration.ID);
 		}
 
 		[HttpDelete]
