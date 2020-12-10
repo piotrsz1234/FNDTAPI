@@ -182,6 +182,9 @@ namespace FNDTAPI.Controllers {
 				return new JsonResult (new { Type = "Error", Details = "PersonTaskCompletionDeclaration is null or it's properties are empty!" });
 			DataModels.TaskLists.Task task = await tasksMongoCollection.FirstOrDefaultAsync (x => x.ID == declaration.Task);
 			if (task == null) return new JsonResult (new { Type = "Error", Details = "PersonTaskCompletionDeclaration has been created for wrong Task!" });
+			long howManyDeclarationForGiveTask = await mongoCollection.CountDocumentsAsync (x => x.Task == task.ID);
+			if(howManyDeclarationForGiveTask >= task.MaximumCountOfPeopleWhoCanDoIt)
+				return new JsonResult (new { Type = "Warming", Details = "You cannot complete that task, because there's maximum amount of people declared." });
 			declaration.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (declaration);
 			return new JsonResult (new { Type = "Success", Details = declaration.ID });
