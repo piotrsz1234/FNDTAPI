@@ -95,7 +95,7 @@ namespace FNDTAPI.Controllers {
 			if (currentValue == null)
 				return new JsonResult (new { Type = "Error", Details = "Sended CalendarEvent to update has altered ID! Unable to update value!" });
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == calendarEvent.ID, Extensions.GenerateUpdateDefinition<CalendarEvent> (currentValue, calendarEvent));
-			if (result.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" }); ;
+			if (result.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" });
 			else return new JsonResult (new { Type = "Error", Details = "Value wasn't updated!" });
 		}
 
@@ -144,7 +144,7 @@ namespace FNDTAPI.Controllers {
 			if (currentValue == null)
 				return new JsonResult (new { Type = "Error", Details = "Sended CalendarEventCategory to update has altered ID! Unable to update value!" });
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == category.ID, Extensions.GenerateUpdateDefinition<CalendarEventCategory> (currentValue, category));
-			if (result.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" }); ;
+			if (result.IsAcknowledged) return new JsonResult (new { Type = "Success", Details = "" });
 			else return new JsonResult (new { Type = "Error", Details = "Value wasn't updated!" });
 		}
 
@@ -160,6 +160,7 @@ namespace FNDTAPI.Controllers {
 			if (registration == null || !registration.AreValuesCorrect ())
 				return new JsonResult (new { Type = "Error", Details = "Registration data was not valid!" });
 			registration.ID = Guid.NewGuid ();
+			registration.HasParticipantConfirmed = true;
 			long result = await mongoCollection.CountDocumentsAsync (x => x.CalendarEventID == registration.CalendarEventID && x.User == registration.User);
 			if (result > 0) return new JsonResult (new { Type = "Warming", Details = "Such declaration already exists!" });
 			await mongoCollection.InsertOneAsync (registration);
@@ -194,6 +195,46 @@ namespace FNDTAPI.Controllers {
 		public async Task<IActionResult> GetParticiationDeclarations (Guid eventID, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
 			IAsyncCursor<ParticipationRegistration> cursor = await mongoCollection.FindAsync (x => x.CalendarEventID == eventID);
 			return new JsonResult (new { Type = "Success", Details = await cursor.ToListAsync () });
+		}
+
+		[HttpGet]
+		[Route("invitations")]
+		public async Task<IActionResult> GetInvitationsAsync(string user, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
+			var result = await mongoCollection.FindAsync (x => x.User == user && x.HasOwnerConfirmed && !x.HasParticipantConfirmed);
+			if (!await result.AnyAsync ()) return new JsonResult (new { Type = "Success", Details = new List<object> () });
+			List<object> output = new List<object> ();
+			foreach (var item in await result.ToListAsync()) {
+				output.Add (new { ID = item.ID, CalendarEventID = item.CalendarEventID });
+			}
+			return new JsonResult (new { Type = "Success", Details = output });
+		}
+
+		[HttpPatch]
+		[Route("invitations")]
+		public async Task<IActionResult> ConfirmInvitationAsync(Guid registrationID, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
+			var currentValue = await (await mongoCollection.FindAsync (x => x.ID == registrationID)).FirstOrDefaultAsync ();
+			if(currentValue == null)
+				return new JsonResult (new { Type = "Error", Details = "There's no such invitation!" });
+			var newValue = Extensions.Copy (currentValue);
+			newValue.HasParticipantConfirmed = true;
+			var result = await mongoCollection.UpdateOneAsync (x => x.ID == registrationID, Extensions.GenerateUpdateDefinition (currentValue, newValue));
+			if(result.IsAcknowledged)
+				return new JsonResult (new { Type = "Success", Details = "" });
+			else return new JsonResult (new { Type = "Error", Details = "Failed to accept invitation!" });
+		}
+
+		[HttpPatch]
+		[Route("participation")]
+		public async Task<IActionResult> AcceptRegistration (Guid registrationID, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
+			var currentValue = await (await mongoCollection.FindAsync (x => x.ID == registrationID)).FirstOrDefaultAsync ();
+			if (currentValue == null)
+				return new JsonResult (new { Type = "Error", Details = "There's no such registration!" });
+			var newValue = Extensions.Copy (currentValue);
+			newValue.HasOwnerConfirmed = true;
+			var result = await mongoCollection.UpdateOneAsync (x => x.ID == registrationID, Extensions.GenerateUpdateDefinition (currentValue, newValue));
+			if (result.IsAcknowledged)
+				return new JsonResult (new { Type = "Success", Details = "" });
+			else return new JsonResult (new { Type = "Error", Details = "Failed to accept registration!" });
 		}
 
 	}

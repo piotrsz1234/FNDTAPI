@@ -32,6 +32,12 @@ namespace FNDTAPI.DataModels.TaskLists {
 		[BsonRequired]
 		[BsonRepresentation (BsonType.String)]
 		public Guid OwnerID { get; set; }
+		/// <summary>
+		/// Defines how many people can declare completion of the task.
+		/// </summary>
+		[BsonRequired]
+		[BsonDefaultValue (1)]
+		public int MaximumCountOfPeopleWhoCanDoIt { get; set; }
 
 		public bool AreValuesCorrect() {
 			if (string.IsNullOrWhiteSpace (Text) || OwnerID == Guid.Empty) return false;

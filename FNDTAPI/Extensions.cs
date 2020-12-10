@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 
 namespace FNDTAPI {
 	
@@ -51,6 +52,10 @@ namespace FNDTAPI {
 		public static string GenerateTwoDigitMonth(int t) {
 			if (t < 10) return $"0{t}";
 			else return t.ToString ();
+		}
+
+		public static T Copy<T> (T val) {
+			return JsonConvert.DeserializeObject<T> (JsonConvert.SerializeObject (val));
 		}
 
 	}
