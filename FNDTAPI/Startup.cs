@@ -1,16 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using FNDTAPI.DataModels.Calendar;
+using FNDTAPI.DataModels.Posts;
 using FNDTAPI.DataModels.TaskLists;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 
 namespace FNDTAPI {
@@ -37,6 +32,9 @@ namespace FNDTAPI {
 			services.AddSingleton (database.GetCollection<Task> (Configuration.GetValue<string> ("TaskCollectionName")));
 			services.AddSingleton (database.GetCollection<PersonTaskCompletionDeclaration> (Configuration.GetValue<string> ("PersonTaskCompletionDeclarationCollectionName")));
 			services.AddSingleton (database.GetCollection<CalendarEventCategory> (Configuration.GetValue<string> ("CalendarEventCategoryCollectionName")));
+			services.AddSingleton (database.GetCollection<Post> (Configuration.GetValue<string> ("PostCollectionName")));
+			services.AddSingleton (database.GetCollection<OldVersionOfPost> (Configuration.GetValue<string> ("OldVersionOfPostCollectionName")));
+			services.AddSingleton (database.GetCollection<Attachment> (Configuration.GetValue<string> ("AttachmentCollectionName")));
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
