@@ -5,6 +5,10 @@ using System.Threading.Tasks;
 
 namespace FNDTAPI.DataModels.Interfaces {
 	public interface IDataModel {
+		/// <summary>
+		/// Checks does Data Model's properties have correct values.
+		/// </summary>
+		/// <returns>Returns does values are correct or not.</returns>
 		bool AreValuesCorrect ();
 	}
 }

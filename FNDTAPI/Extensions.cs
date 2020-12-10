@@ -54,7 +54,7 @@ namespace FNDTAPI {
 			else return t.ToString ();
 		}
 
-		public static T Copy<T> (T val) {
+		public static T Copy<T> (this T val) {
 			return JsonConvert.DeserializeObject<T> (JsonConvert.SerializeObject (val));
 		}
 
