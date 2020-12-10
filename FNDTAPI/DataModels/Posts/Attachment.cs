@@ -18,6 +18,11 @@ namespace FNDTAPI.DataModels.Posts {
 		[BsonRepresentation(BsonType.String)]
 		public Guid ID { get; set; }
 		/// <summary>
+		/// ID of a <see cref="Post"/>.
+		/// </summary>
+		[BsonRepresentation(BsonType.String)]
+		public Guid PostID { get; set; }
+		/// <summary>
 		/// Original - user's name of a file.
 		/// </summary>
 		[BsonRequired]
