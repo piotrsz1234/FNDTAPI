@@ -1,10 +1,11 @@
 ﻿using System;
+using FNDTAPI.DataModels.Interfaces;
 using FNDTAPI.DataModels.Shared;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace FNDTAPI.DataModels.Calendar {
-	public class CalendarEventCategory {
+	public class CalendarEventCategory : IDataModel {
 
 		/// <summary>
 		/// Id of a Category.

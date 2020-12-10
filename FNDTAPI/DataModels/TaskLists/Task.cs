@@ -1,4 +1,5 @@
 ﻿using System;
+using FNDTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -7,7 +8,7 @@ namespace FNDTAPI.DataModels.TaskLists {
 	/// <summary>
 	/// Class, which represents single Task in TaskList.
 	/// </summary>
-	public class Task {
+	public class Task : IDataModel {
 
 		/// <summary>
 		/// ID of a Task.

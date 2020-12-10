@@ -1,4 +1,5 @@
 ﻿using System;
+using FNDTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -7,7 +8,7 @@ namespace FNDTAPI.DataModels.Calendar {
 	/// <summary>
 	/// Class, which represents Event in Calendar
 	/// </summary>
-	public class CalendarEvent {
+	public class CalendarEvent : IDataModel {
 
 		/// <summary>
 		/// Unique ID of Event.

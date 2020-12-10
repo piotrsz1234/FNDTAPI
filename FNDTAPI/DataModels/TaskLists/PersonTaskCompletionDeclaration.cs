@@ -1,4 +1,5 @@
 ﻿using System;
+using FNDTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -6,7 +7,7 @@ namespace FNDTAPI.DataModels.TaskLists {
 	/// <summary>
 	/// Class, which represents person's declaration of task completion
 	/// </summary>
-	public class PersonTaskCompletionDeclaration {
+	public class PersonTaskCompletionDeclaration : IDataModel {
 
 		/// <summary>
 		/// ID of a declaration.

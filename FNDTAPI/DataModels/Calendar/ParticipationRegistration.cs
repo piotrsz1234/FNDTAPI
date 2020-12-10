@@ -1,4 +1,5 @@
 ﻿using System;
+using FNDTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -7,7 +8,7 @@ namespace FNDTAPI.DataModels.Calendar {
 	/// <summary>
 	/// Class, which represents registration of user in CalendarEvent.
 	/// </summary>
-	public class ParticipationRegistration {
+	public class ParticipationRegistration : IDataModel {
 
 		/// <summary>
 		/// Guid, which is key in database's collection.
