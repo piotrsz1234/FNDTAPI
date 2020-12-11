@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using FNDTAPI.DataModels.Notifications;
 using FNDTAPI.DataModels.Posts;
 using FNDTAPI.DataModels.Shared;
 using Microsoft.AspNetCore.Http;
@@ -38,7 +39,7 @@ namespace FNDTAPI.Controllers {
 
 		[HttpPatch]
 		[Route ("post/publish")]
-		public async Task<IActionResult> PublishChangesAsync (Post newPost, [FromServices] IMongoCollection<Post> mongoCollection, [FromServices] IMongoCollection<OldVersionOfPost> oldCollection) {
+		public async Task<IActionResult> PublishChangesAsync (Post newPost, [FromServices] IMongoCollection<Post> mongoCollection, [FromServices] IMongoCollection<OldVersionOfPost> oldCollection, [FromServices] IMongoCollection<Notification> notificationsCollection) {
 			Post currentValue = await (await mongoCollection.FindAsync (x => x.ID == newPost.ID)).FirstOrDefaultAsync ();
 			if (currentValue == null)
 				return this.Error ("There's no such Post!");
@@ -47,6 +48,7 @@ namespace FNDTAPI.Controllers {
 			};
 			if (currentValue != null || !currentValue.IsPublished)
 				await oldCollection.InsertOneAsync (oldVersion);
+			else await this.AddNotificationAsync (new NewPostNotification (Guid.NewGuid (), newPost.ForWho, newPost.Owner, newPost.ID), notificationsCollection);
 			newPost.PublishTime = DateTime.Now;
 			newPost.IsPublished = true;
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == newPost.ID, Extensions.GenerateUpdateDefinition (currentValue, newPost));

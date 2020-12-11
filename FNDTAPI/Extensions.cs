@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
+using FNDTAPI.DataModels.Notifications;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using Newtonsoft.Json;
@@ -70,16 +72,30 @@ namespace FNDTAPI {
 			return JsonConvert.DeserializeObject<T> (JsonConvert.SerializeObject (val));
 		}
 
+		[NonAction]
 		public static JsonResult Success(this ControllerBase controller, object details) {
 			return new JsonResult (new { Type = "Success", Details = details });
 		}
 
+		[NonAction]
 		public static JsonResult Error (this ControllerBase controller, string details) {
 			return new JsonResult (new { Type = "Error", Details = details });
 		}
 
+		[NonAction]
 		public static JsonResult Warming (this ControllerBase controller, string details) {
 			return new JsonResult (new { Type = "Warming", Details = details });
+		}
+
+		public static void AddRange<T> (this HashSet<T> hashSet, IEnumerable<T> collection) {
+			foreach (var item in collection) {
+				hashSet.Add (item);
+			}
+		}
+
+		public static async Task AddNotificationAsync (this ControllerBase controller, Notification notification, [FromServices] IMongoCollection<Notification> mongoCollection) {
+			if (!notification.AreValuesCorrect ()) return;
+			await mongoCollection.InsertOneAsync (notification);
 		}
 
 	}

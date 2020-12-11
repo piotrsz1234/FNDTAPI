@@ -1,6 +1,8 @@
 using FNDTAPI.DataModels.Calendar;
+using FNDTAPI.DataModels.Notifications;
 using FNDTAPI.DataModels.Posts;
 using FNDTAPI.DataModels.TaskLists;
+using FNDTAPI.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +21,7 @@ namespace FNDTAPI {
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices (IServiceCollection services) {
 			services.AddControllers ();
+			services.AddSignalR ();
 			AddingMongoDBToDependencyInjection (services);
 		}
 
@@ -35,6 +38,8 @@ namespace FNDTAPI {
 			services.AddSingleton (database.GetCollection<Post> (Configuration.GetValue<string> ("PostCollectionName")));
 			services.AddSingleton (database.GetCollection<OldVersionOfPost> (Configuration.GetValue<string> ("OldVersionOfPostCollectionName")));
 			services.AddSingleton (database.GetCollection<Attachment> (Configuration.GetValue<string> ("AttachmentCollectionName")));
+			services.AddSingleton (database.GetCollection<Notification> (Configuration.GetValue<string> ("NotificationCollectionName")));
+			services.AddSingleton (database.GetCollection<NotificationRead> (Configuration.GetValue<string> ("NotificationsReadCollectionName")));
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -48,9 +53,10 @@ namespace FNDTAPI {
 			app.UseRouting ();
 
 			app.UseAuthorization ();
-
+			
 			app.UseEndpoints (endpoints => {
 				endpoints.MapControllers ();
+				endpoints.MapHub<NotificationsHub> ("/notification");
 			});
 		}
 	}

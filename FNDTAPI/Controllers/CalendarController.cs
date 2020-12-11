@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FNDTAPI.DataModels.Calendar;
+using FNDTAPI.DataModels.Notifications;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
@@ -23,11 +24,12 @@ namespace FNDTAPI.Controllers {
 		/// <returns>As a result returns Json with Guid of added calendar event.</returns>
 		[HttpPost]
 		[Route ("events")]
-		public async Task<IActionResult> AddCalendarEventAsync (CalendarEvent calendarEvent, [FromServices] IMongoCollection<CalendarEvent> mongoCollection) {
+		public async Task<IActionResult> AddCalendarEventAsync (CalendarEvent calendarEvent, [FromServices] IMongoCollection<CalendarEvent> mongoCollection, [FromServices] IMongoCollection<Notification> notificationsCollection) {
 			if (calendarEvent == null || !calendarEvent.AreValuesCorrect ())
 				return this.Error ("CalendarEvent is null or it's properties are empty!");
 			calendarEvent.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (calendarEvent);
+			await this.AddNotificationAsync (new NewEventNotification (Guid.NewGuid (), calendarEvent.ForWho, calendarEvent.CreatorEmail, calendarEvent.ID), notificationsCollection);
 			return this.Success (calendarEvent.ID);
 		}
 
@@ -223,18 +225,38 @@ namespace FNDTAPI.Controllers {
 			else return this.Error ("Failed to accept invitation!");
 		}
 
+		public async Task<IActionResult> InviteAsync(Dictionary<string, string> data, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection, [FromServices] IMongoCollection<Notification> notificationCollection) {
+			if (data == null || !data.ContainsKey ("Who") || !data.ContainsKey ("EventID") || !data.ContainsKey("Sender"))
+				return this.Error ("Json sent is null or doesn't contains: Who : string and EventID : Guid and Sender : string!");
+			string who = data["Who"];
+			Guid eventID;
+			if (!Guid.TryParse (data["EventID"], out eventID))
+				return this.Error ("Couldn't parse EventID to Guid!");
+			ParticipationRegistration temp = new ParticipationRegistration () { 
+				ID = Guid.NewGuid(),
+				CalendarEventID = eventID,
+				HasOwnerConfirmed = true,
+				HasParticipantConfirmed = false,
+				User = who
+			};
+			await mongoCollection.InsertOneAsync (temp);
+			await this.AddNotificationAsync (new NewInvitationNotification (Guid.NewGuid (), who, data["sender"], temp.ID), notificationCollection);
+			return this.Success (temp.ID);
+		}
+
 		[HttpPatch]
 		[Route ("participation")]
-		public async Task<IActionResult> AcceptRegistration (Guid registrationID, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
+		public async Task<IActionResult> AcceptRegistration (Guid registrationID, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection, [FromServices] IMongoCollection<Notification> notificationCollection) {
 			ParticipationRegistration currentValue = await (await mongoCollection.FindAsync (x => x.ID == registrationID)).FirstOrDefaultAsync ();
 			if (currentValue == null)
 				return this.Error ("There's no such registration!");
 			ParticipationRegistration newValue = Extensions.Copy (currentValue);
 			newValue.HasOwnerConfirmed = true;
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == registrationID, Extensions.GenerateUpdateDefinition (currentValue, newValue));
-			if (result.IsAcknowledged)
+			if (result.IsAcknowledged) {
+				await this.AddNotificationAsync (new ConfirmationNotification (Guid.NewGuid (), currentValue.User, "", currentValue.CalendarEventID, currentValue.ID), notificationCollection);
 				return this.Success ("");
-			else return this.Error ("Failed to accept registration!");
+			} else return this.Error ("Failed to accept registration!");
 		}
 
 	}
