@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
-using FNDTAPI.DataModels.Calendar;
-using FNDTAPI.DataModels.Notifications;
+using FDNTAPI.DataModels.Calendar;
+using FDNTAPI.DataModels.Notifications;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
-namespace FNDTAPI.Controllers {
+namespace FDNTAPI.Controllers {
 
 	/// <summary>
 	/// Controller, which contains actions for Calendar Event and Participation Registration.
@@ -26,7 +27,7 @@ namespace FNDTAPI.Controllers {
 		[Route ("events")]
 		public async Task<IActionResult> AddCalendarEventAsync (CalendarEvent calendarEvent, [FromServices] IMongoCollection<CalendarEvent> mongoCollection, [FromServices] IMongoCollection<Notification> notificationsCollection) {
 			if (calendarEvent == null || !calendarEvent.AreValuesCorrect ())
-				return this.Error ("CalendarEvent is null or it's properties are empty!");
+				return this.Error (HttpStatusCode.UnprocessableEntity, "CalendarEvent is null or it's properties are empty!");
 			calendarEvent.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (calendarEvent);
 			await this.AddNotificationAsync (new NewEventNotification (Guid.NewGuid (), calendarEvent.ForWho, calendarEvent.CreatorEmail, calendarEvent.ID), notificationsCollection);
@@ -48,14 +49,14 @@ namespace FNDTAPI.Controllers {
 			string email = data["owner"];
 			CalendarEvent temp = await (await mongoCollection.FindAsync (x => x.ID == calendarEventID)).FirstOrDefaultAsync ();
 			if (temp == null)
-				return this.Error ("There's no such CalendarEvent!");
+				return this.Error (HttpStatusCode.NotFound, "There's no such CalendarEvent!");
 			if (temp.CreatorEmail != email)
-				return this.Error ("You don't have access to that CalendarEvent!");
+				return this.Error (HttpStatusCode.Forbidden, "You don't have access to that CalendarEvent!");
 			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.ID == calendarEventID);
 			DeleteResult result2 = await particiationCollection.DeleteManyAsync (x => x.CalendarEventID == calendarEventID);
 			if (result.IsAcknowledged && result2.IsAcknowledged)
-				return this.Success ("");
-			else return this.Error ("Failed to remove object or it's mentions!");
+				return Ok ();
+			else return this.Error (HttpStatusCode.InternalServerError, "Failed to remove object or it's mentions!");
 		}
 
 		/// <summary>
@@ -69,17 +70,15 @@ namespace FNDTAPI.Controllers {
 		/// <returns><see cref="JsonResult"/> with List of <see cref="CalendarEvent"/></returns>
 		[HttpGet]
 		[Route ("events")]
-		public async Task<IActionResult> GetCalendarEventsAsync (int month, int year, string groups, string email, [FromServices] IMongoCollection<CalendarEvent> mongoCollection) {
-			if (month < 1 || month > 12 || year < 0)
-				return this.Error ("Month must be in range <1;12>, and year has to be greater than zero.");
-			DateTime begining = DateTime.Parse ($"{year}-{Extensions.GenerateTwoDigitMonth (month)}-01T00:00:00 Z");
-			DateTime ending = DateTime.Parse ($"{year}-{Extensions.GenerateTwoDigitMonth (month)}-31T23:59:59.99 Z");
-			IAsyncCursor<CalendarEvent> cursor = await mongoCollection.FindAsync (x => x.WhenBegins >= begining && x.WhenEnds <= ending);
-			List<CalendarEvent> temp = await cursor.ToListAsync ();
-			if (temp == null || temp.Count == 0)
-				return this.Success (new List<CalendarEvent> ());
-			IEnumerable<CalendarEvent> output = temp.Where (x => x.ForWho.Contains (email) || groups.Split ('\n').Any (y => x.ForWho.Split ('\n').Any (z => z == y)));
-			return this.Success (output);
+		public async Task<IActionResult> GetCalendarEventsAsync (string groups, string email, [FromServices] IMongoCollection<CalendarEvent> mongoCollection) {
+			List<CalendarEvent> result = new List<CalendarEvent> ();
+			using (var cursor = await mongoCollection.FindAsync (x => true)) {
+				do {
+					if (cursor.Current == null) continue;
+					result.AddRange (cursor.Current.Where (x => x.ForWho.Contains (email) || x.ForWho.Split ('\n').Any (y => groups.Contains (y))));
+				} while (await cursor.MoveNextAsync ());
+			}
+			return this.Success (result);
 		}
 
 		/// <summary>
@@ -92,13 +91,13 @@ namespace FNDTAPI.Controllers {
 		[Route ("events")]
 		public async Task<IActionResult> UpdateCalendarEventAsync (CalendarEvent calendarEvent, [FromServices] IMongoCollection<CalendarEvent> mongoCollection) {
 			if (calendarEvent == null || !calendarEvent.AreValuesCorrect ())
-				return this.Error ("CalendarEvent is null or it's properties are empty!");
+				return this.Error (HttpStatusCode.UnprocessableEntity, "CalendarEvent is null or it's properties are empty!");
 			CalendarEvent currentValue = await mongoCollection.FirstOrDefaultAsync (x => x.ID == calendarEvent.ID);
 			if (currentValue == null)
-				return this.Error ("Sended CalendarEvent to update has altered ID! Unable to update value!");
+				return this.Error (HttpStatusCode.UnprocessableEntity, "Sended CalendarEvent to update has altered ID! Unable to update value!");
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == calendarEvent.ID, Extensions.GenerateUpdateDefinition<CalendarEvent> (currentValue, calendarEvent));
 			if (result.IsAcknowledged) return this.Success ("");
-			else return this.Error ("Value wasn't updated!");
+			else return this.Error (HttpStatusCode.InternalServerError, "Value wasn't updated!");
 		}
 
 		/// <summary>
@@ -115,6 +114,17 @@ namespace FNDTAPI.Controllers {
 			return this.Success (await cursor.ToListAsync ());
 		}
 
+		[HttpGet]
+		[Route("categories")]
+		public async Task<IActionResult> GetCategoryAsync(Guid categoryId,[FromServices] IMongoCollection<CalendarEventCategory> mongoCollection ) {
+			if (categoryId == Guid.Empty)
+				return this.Error(HttpStatusCode.UnprocessableEntity, "Category ID cannot be empty!");
+			var result = await (await mongoCollection.FindAsync(x => x.ID == categoryId)).FirstOrDefaultAsync();
+			if (result == null)
+				return this.Error(HttpStatusCode.NotFound, "There's no such category!");
+			return this.Success(result);
+		}
+		
 		/// <summary>
 		/// [HTTP POST] Adds <see cref="CalendarEventCategory"/> to database.
 		/// </summary>
@@ -124,8 +134,8 @@ namespace FNDTAPI.Controllers {
 		[HttpPost]
 		[Route ("categories")]
 		public async Task<IActionResult> AddCategoryAsync (CalendarEventCategory category, [FromServices] IMongoCollection<CalendarEventCategory> mongoCollection) {
-			if (category == null || !category.AreValueCorrect ())
-				return this.Error ("CalendarEventCategory is null or it's properties are empty!");
+			if (category == null || !category.AreValuesCorrect ())
+				return this.Error (HttpStatusCode.UnprocessableEntity, "CalendarEventCategory is null or it's properties are empty!");
 			category.ID = Guid.NewGuid ();
 			await mongoCollection.InsertOneAsync (category);
 			return this.Success (category.ID);
@@ -140,14 +150,14 @@ namespace FNDTAPI.Controllers {
 		[HttpPatch]
 		[Route ("categories")]
 		public async Task<IActionResult> UpdateCategoryAsync (CalendarEventCategory category, [FromServices] IMongoCollection<CalendarEventCategory> mongoCollection) {
-			if (category == null || !category.AreValueCorrect ())
-				return this.Error ("CalendarEventCategory is null or it's properties are empty!");
+			if (category == null || !category.AreValuesCorrect ())
+				return this.Error (HttpStatusCode.UnprocessableEntity, "CalendarEventCategory is null or it's properties are empty!");
 			CalendarEventCategory currentValue = await mongoCollection.FirstOrDefaultAsync (x => x.ID == category.ID);
 			if (currentValue == null)
-				return this.Error ("Sended CalendarEventCategory to update has altered ID! Unable to update value!");
+				return this.Error (HttpStatusCode.UnprocessableEntity, "Sended CalendarEventCategory to update has altered ID! Unable to update value!");
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == category.ID, Extensions.GenerateUpdateDefinition<CalendarEventCategory> (currentValue, category));
 			if (result.IsAcknowledged) return this.Success ("");
-			else return this.Error ("Value wasn't updated!");
+			else return this.Error (HttpStatusCode.InternalServerError, "Value wasn't updated!");
 		}
 
 		/// <summary>
@@ -160,11 +170,11 @@ namespace FNDTAPI.Controllers {
 		[Route ("participation")]
 		public async Task<IActionResult> RegisterParticiationDeclarationAsync (ParticipationRegistration registration, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
 			if (registration == null || !registration.AreValuesCorrect ())
-				return this.Error ("Registration data was not valid!");
+				return this.Error (HttpStatusCode.UnprocessableEntity, "Registration data was not valid!");
 			registration.ID = Guid.NewGuid ();
 			registration.HasParticipantConfirmed = true;
-			long result = await mongoCollection.CountDocumentsAsync (x => x.CalendarEventID == registration.CalendarEventID && x.User == registration.User);
-			if (result > 0) return this.Warming ("Such declaration already exists!");
+			long result = await mongoCollection.CountDocumentsAsync (x => x.CalendarEventID == registration.CalendarEventID && x.User == registration.User && x.HasParticipantConfirmed);
+			if (result > 0) return this.Error (HttpStatusCode.UnprocessableEntity, "Such declaration already exists!");
 			await mongoCollection.InsertOneAsync (registration);
 			return this.Success (registration.ID);
 		}
@@ -183,7 +193,7 @@ namespace FNDTAPI.Controllers {
 			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.CalendarEventID == calendarEventID && x.User == owner);
 			if (result.IsAcknowledged)
 				return this.Success ("");
-			else return this.Error ("There's no such ParticipationRegistration!");
+			else return this.Error (HttpStatusCode.NotFound, "There's no such ParticipationRegistration!");
 		}
 
 		/// <summary>
@@ -204,11 +214,7 @@ namespace FNDTAPI.Controllers {
 		public async Task<IActionResult> GetInvitationsAsync (string user, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
 			IAsyncCursor<ParticipationRegistration> result = await mongoCollection.FindAsync (x => x.User == user && x.HasOwnerConfirmed && !x.HasParticipantConfirmed);
 			if (!await result.AnyAsync ()) return this.Success (new List<object> ());
-			List<object> output = new List<object> ();
-			foreach (ParticipationRegistration item in await result.ToListAsync ()) {
-				output.Add (new { ID = item.ID, CalendarEventID = item.CalendarEventID );
-			}
-			return this.Success (output);
+			return this.Success (await result.ToListAsync ());
 		}
 
 		[HttpPatch]
@@ -216,24 +222,24 @@ namespace FNDTAPI.Controllers {
 		public async Task<IActionResult> ConfirmInvitationAsync (Guid registrationID, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
 			ParticipationRegistration currentValue = await (await mongoCollection.FindAsync (x => x.ID == registrationID)).FirstOrDefaultAsync ();
 			if (currentValue == null)
-				return this.Error ("There's no such invitation!");
+				return this.Error (HttpStatusCode.NotFound, "There's no such invitation!");
 			ParticipationRegistration newValue = Extensions.Copy (currentValue);
 			newValue.HasParticipantConfirmed = true;
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == registrationID, Extensions.GenerateUpdateDefinition (currentValue, newValue));
 			if (result.IsAcknowledged)
 				return this.Success ("");
-			else return this.Error ("Failed to accept invitation!");
+			else return this.Error (HttpStatusCode.InternalServerError, "Failed to accept invitation!");
 		}
 
-		public async Task<IActionResult> InviteAsync(Dictionary<string, string> data, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection, [FromServices] IMongoCollection<Notification> notificationCollection) {
-			if (data == null || !data.ContainsKey ("Who") || !data.ContainsKey ("EventID") || !data.ContainsKey("Sender"))
-				return this.Error ("Json sent is null or doesn't contains: Who : string and EventID : Guid and Sender : string!");
+		public async Task<IActionResult> InviteAsync (Dictionary<string, string> data, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection, [FromServices] IMongoCollection<Notification> notificationCollection) {
+			if (data == null || !data.ContainsKey ("Who") || !data.ContainsKey ("EventID") || !data.ContainsKey ("Sender"))
+				return this.Error (HttpStatusCode.UnprocessableEntity, "Json sent is null or doesn't contains: Who : string and EventID : Guid and Sender : string!");
 			string who = data["Who"];
 			Guid eventID;
 			if (!Guid.TryParse (data["EventID"], out eventID))
-				return this.Error ("Couldn't parse EventID to Guid!");
-			ParticipationRegistration temp = new ParticipationRegistration () { 
-				ID = Guid.NewGuid(),
+				return this.Error (HttpStatusCode.UnprocessableEntity, "Couldn't parse EventID to Guid!");
+			ParticipationRegistration temp = new ParticipationRegistration () {
+				ID = Guid.NewGuid (),
 				CalendarEventID = eventID,
 				HasOwnerConfirmed = true,
 				HasParticipantConfirmed = false,
@@ -249,14 +255,14 @@ namespace FNDTAPI.Controllers {
 		public async Task<IActionResult> AcceptRegistration (Guid registrationID, [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection, [FromServices] IMongoCollection<Notification> notificationCollection) {
 			ParticipationRegistration currentValue = await (await mongoCollection.FindAsync (x => x.ID == registrationID)).FirstOrDefaultAsync ();
 			if (currentValue == null)
-				return this.Error ("There's no such registration!");
+				return this.Error (HttpStatusCode.NotFound, "There's no such registration!");
 			ParticipationRegistration newValue = Extensions.Copy (currentValue);
 			newValue.HasOwnerConfirmed = true;
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == registrationID, Extensions.GenerateUpdateDefinition (currentValue, newValue));
 			if (result.IsAcknowledged) {
 				await this.AddNotificationAsync (new ConfirmationNotification (Guid.NewGuid (), currentValue.User, "", currentValue.CalendarEventID, currentValue.ID), notificationCollection);
-				return this.Success ("");
-			} else return this.Error ("Failed to accept registration!");
+				return Ok();
+			} else return this.Error (HttpStatusCode.InternalServerError, "Failed to accept registration!");
 		}
 
 	}

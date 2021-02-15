@@ -2,7 +2,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace FNDTAPI.DataModels.Notifications {
+namespace FDNTAPI.DataModels.Notifications {
 	public class NewEventNotification : Notification {
 
 		[BsonRepresentation (BsonType.String)]

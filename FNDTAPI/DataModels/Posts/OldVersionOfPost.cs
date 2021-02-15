@@ -1,9 +1,9 @@
 ﻿using System;
-using FNDTAPI.DataModels.Interfaces;
+using FDNTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace FNDTAPI.DataModels.Posts {
+namespace FDNTAPI.DataModels.Posts {
 
 	/// <summary>
 	/// Represents previous, published versions of a <see cref="Post"/>.
@@ -53,7 +53,7 @@ namespace FNDTAPI.DataModels.Posts {
 		}
 
 		public bool AreValuesCorrect () {
-			return !(PostID == Guid.Empty || PublishTime == null || string.IsNullOrEmpty (ForWho));
+			return !(PostID == Guid.Empty || string.IsNullOrEmpty (ForWho));
 		}
 	}
 }

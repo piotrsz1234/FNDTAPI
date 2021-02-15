@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace FNDTAPI.DataModels.Shared {
+namespace FDNTAPI.DataModels.Shared {
 	
 	/// <summary>
 	/// Class required to serialize color.

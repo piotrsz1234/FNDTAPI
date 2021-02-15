@@ -1,8 +1,8 @@
-using FNDTAPI.DataModels.Calendar;
-using FNDTAPI.DataModels.Notifications;
-using FNDTAPI.DataModels.Posts;
-using FNDTAPI.DataModels.TaskLists;
-using FNDTAPI.Hubs;
+using FDNTAPI.DataModels.Calendar;
+using FDNTAPI.DataModels.Notifications;
+using FDNTAPI.DataModels.Posts;
+using FDNTAPI.DataModels.TaskLists;
+using FDNTAPI.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
 
-namespace FNDTAPI {
+namespace FDNTAPI {
 	public class Startup {
 		public Startup (IConfiguration configuration) {
 			Configuration = configuration;

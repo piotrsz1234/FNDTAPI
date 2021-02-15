@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace FNDTAPI.DataModels.Interfaces {
+namespace FDNTAPI.DataModels.Interfaces {
 	public interface IDataModel {
 		/// <summary>
 		/// Checks does Data Model's properties have correct values.

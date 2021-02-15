@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
-using FNDTAPI.DataModels.Notifications;
-using FNDTAPI.DataModels.Posts;
-using FNDTAPI.DataModels.Shared;
+using FDNTAPI.DataModels.Notifications;
+using FDNTAPI.DataModels.Posts;
+using FDNTAPI.DataModels.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 
-namespace FNDTAPI.Controllers {
+namespace FDNTAPI.Controllers {
 
 	/// <summary>
 	///	Controller contains actions for <see cref="Post"/> and <see cref="OldVersionOfPost"/> and <see cref="Attachment"/>. 
@@ -20,17 +21,17 @@ namespace FNDTAPI.Controllers {
 	[ApiController]
 	public class PostController : ControllerBase {
 
-		private readonly IConfiguration config;
+		private readonly IConfiguration _configuration;
 
 		public PostController (IConfiguration configuration) {
-			config = configuration;
+			_configuration = configuration;
 		}
 
 		[HttpPost]
-		[Route ("post")]
+		[Route ("posts")]
 		public async Task<IActionResult> AddPostAsync (Post post, [FromServices] IMongoCollection<Post> mongoCollection) {
 			if (post == null || !post.AreValuesCorrect ())
-				return this.Error ("Post is null or it's properties are empty!");
+				return this.Error (HttpStatusCode.UnprocessableEntity, "Post is null or it's properties are empty!");
 			post.ID = Guid.NewGuid ();
 			post.PublishTime = DateTime.Now;
 			await mongoCollection.InsertOneAsync (post);
@@ -38,31 +39,31 @@ namespace FNDTAPI.Controllers {
 		}
 
 		[HttpPatch]
-		[Route ("post/publish")]
+		[Route ("posts/publish")]
 		public async Task<IActionResult> PublishChangesAsync (Post newPost, [FromServices] IMongoCollection<Post> mongoCollection, [FromServices] IMongoCollection<OldVersionOfPost> oldCollection, [FromServices] IMongoCollection<Notification> notificationsCollection) {
 			Post currentValue = await (await mongoCollection.FindAsync (x => x.ID == newPost.ID)).FirstOrDefaultAsync ();
 			if (currentValue == null)
-				return this.Error ("There's no such Post!");
+				return this.Error (HttpStatusCode.NotFound, "There's no such Post!");
 			OldVersionOfPost oldVersion = new OldVersionOfPost (currentValue) {
 				ID = Guid.NewGuid ()
 			};
-			if (currentValue != null || !currentValue.IsPublished)
+			if (!currentValue.IsPublished)
 				await oldCollection.InsertOneAsync (oldVersion);
-			else await this.AddNotificationAsync (new NewPostNotification (Guid.NewGuid (), newPost.ForWho, newPost.Owner, newPost.ID), notificationsCollection);
+			await this.AddNotificationAsync (new NewPostNotification (Guid.NewGuid (), newPost.ForWho, newPost.Owner, newPost.ID), notificationsCollection);
 			newPost.PublishTime = DateTime.Now;
 			newPost.IsPublished = true;
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == newPost.ID, Extensions.GenerateUpdateDefinition (currentValue, newPost));
 			if (result.IsAcknowledged)
 				return this.Success (newPost.ID);
-			else return this.Error ("Publishing changes failed!");
+			else return this.Error (HttpStatusCode.InternalServerError, "Publishing changes failed!");
 		}
 
 		[HttpDelete]
-		[Route ("post")]
+		[Route ("posts")]
 		public async Task<IActionResult> DeletePostAsync (Guid id, [FromServices] IMongoCollection<Post> mongoCollection, [FromServices] IMongoCollection<OldVersionOfPost> oldCollection) {
 			Post currentValue = await (await mongoCollection.FindAsync (x => x.ID == id)).FirstOrDefaultAsync ();
 			if (currentValue == null)
-				return this.Error ($"There's no post with ID={id}");
+				return this.Error (HttpStatusCode.NotFound, $"There's no post with ID={id}");
 			if (currentValue.IsPublished) {
 				OldVersionOfPost temp = new OldVersionOfPost (currentValue) {
 					ID = Guid.NewGuid ()
@@ -71,38 +72,38 @@ namespace FNDTAPI.Controllers {
 			}
 			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.ID == id);
 			if (result.IsAcknowledged)
-				return this.Success ("Post has been removed successfully");
-			else return this.Error ("Deleting of a post failed!");
+				return this.Ok ();
+			else return this.Error (HttpStatusCode.InternalServerError, "Deleting of a post failed!");
 		}
 
 		[HttpPatch]
-		[Route ("post")]
+		[Route ("posts")]
 		public async Task<IActionResult> UpdatePostAsync (Post newPost, [FromServices] IMongoCollection<Post> mongoCollection) {
 			if (newPost == null || !newPost.AreValuesCorrect () || newPost.IsPublished)
-				return this.Error ("Sent post is null or has incorrect values or is already published. This action is for unpublished posts");
+				return this.Error (HttpStatusCode.UnprocessableEntity, "Sent post is null or has incorrect values or is already published. This action is for unpublished posts");
 			Post currentValue = await (await mongoCollection.FindAsync (x => x.ID == newPost.ID)).FirstOrDefaultAsync ();
 			if (currentValue == null || currentValue.IsPublished)
-				return this.Error ($"There's no such Post with ID: {newPost.ID} or is published. If it's published, use 'post/publish'.");
+				return this.Error (HttpStatusCode.NotFound, $"There's no such Post with ID: {newPost.ID} or is published. If it's published, use 'post/publish'.");
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == newPost.ID, Extensions.GenerateUpdateDefinition (currentValue, newPost));
 			if (result.IsAcknowledged)
 				return this.Success (newPost.ID);
-			else return this.Error ("Updating of a post failed!");
+			else return this.Error (HttpStatusCode.InternalServerError, "Updating of a post failed!");
 		}
 
 		[HttpGet]
-		[Route ("post")]
-		public async Task<IActionResult> GetAvailablePosts (string email, [FromServices] IMongoCollection<Post> mongoCollection) {
+		[Route ("posts")]
+		public async Task<IActionResult> GetAvailablePosts (string email, string group, [FromServices] IMongoCollection<Post> mongoCollection) {
 			List<Post> result = new List<Post> ();
 			using (var cursor = await mongoCollection.FindAsync (x => x != null)) {
 				do {
-					result.AddRange (cursor.Current.Where (x => x.ForWho.Contains (email)));
+					result.AddRange (cursor.Current.Where (x => x.ForWho.Contains (email) || group.Split('\n').Any(y => group.Contains(y))));
 				} while (await cursor.MoveNextAsync ());
 			}
 			return this.Success (result);
 		}
 
 		[HttpGet]
-		[Route ("post")]
+		[Route ("posts")]
 		public async Task<IActionResult> GetMinePost (string user, [FromServices] IMongoCollection<Post> mongoCollection) {
 			var result = await (await mongoCollection.FindAsync (x => x.Owner == user)).ToListAsync ();
 			return this.Success (result);
@@ -112,6 +113,7 @@ namespace FNDTAPI.Controllers {
 		[Route ("attachments")]
 		public async Task<IActionResult> AddAttachmentsAsync (AttachmentUploadFormat attachmentUpload, [FromServices] IMongoCollection<Attachment> mongoCollection) {
 			int output = 0;
+			if (attachmentUpload == null) return this.Error (HttpStatusCode.UnprocessableEntity, "Data is null!");
 			foreach (IFormFile item in attachmentUpload.Files) {
 				if (item.Length > 10240 * 1024 || item.Length == 0) continue;
 				Attachment value = new Attachment {
@@ -119,8 +121,8 @@ namespace FNDTAPI.Controllers {
 					OriginalFileName = item.FileName,
 					CurrentFileName = Path.GetRandomFileName ()
 				};
-				string filePath = Path.Combine (config["FilesStoragePath"], attachmentUpload.ID.ToString (), value.CurrentFileName);
-				using (FileStream stream = System.IO.File.Create (filePath)) {
+				string filePath = Path.Combine (_configuration["FilesStoragePath"], attachmentUpload.ID.ToString (), value.CurrentFileName);
+				await using (FileStream stream = System.IO.File.Create (filePath)) {
 					await item.CopyToAsync (stream);
 				}
 				await mongoCollection.InsertOneAsync (value);
@@ -131,9 +133,8 @@ namespace FNDTAPI.Controllers {
 
 		[HttpGet]
 		[Route ("attachments")]
-		public async Task<IActionResult> GetAttachmentsAsync (Guid postID, [FromServices] IMongoCollection<Attachment> mongoCollection) {
-			List<Attachment> result = await (await mongoCollection.FindAsync (x => x.PostID == postID)).ToListAsync ();
-			IEnumerable<string> output = result.Select (x => x.OriginalFileName);
+		public async Task<IActionResult> GetAttachmentsAsync (Guid postId, [FromServices] IMongoCollection<Attachment> mongoCollection) {
+			List<Attachment> result = await (await mongoCollection.FindAsync (x => x.PostID == postId)).ToListAsync ();
 			return this.Success (result);
 		}
 
@@ -143,7 +144,7 @@ namespace FNDTAPI.Controllers {
 			Attachment attachment = await (await mongoCollection.FindAsync (x => x.PostID == id && x.OriginalFileName == name)).FirstOrDefaultAsync ();
 			if (attachment == null)
 				return NotFound ();
-			string filePath = Path.Combine (config["FilesStoragePath"], ((attachment.PostID == Guid.Empty) ? attachment.OldVersionID : attachment.PostID).ToString (), name);
+			string filePath = Path.Combine (_configuration["FilesStoragePath"], ((attachment.PostID == Guid.Empty) ? attachment.OldVersionID : attachment.PostID).ToString (), name);
 			using (Stream stream = System.IO.File.OpenRead (filePath)) {
 				return File (stream, "application/octet-stream", attachment.OriginalFileName);
 			}
@@ -151,23 +152,23 @@ namespace FNDTAPI.Controllers {
 
 		[HttpDelete]
 		[Route ("attachments")]
-		public async Task<IActionResult> RemoveAttachment (Guid attachmentID, [FromServices] IMongoCollection<Attachment> mongoCollection) {
-			Attachment result = await (await mongoCollection.FindAsync (x => x.ID == attachmentID)).FirstOrDefaultAsync ();
+		public async Task<IActionResult> RemoveAttachment (Guid attachmentId, [FromServices] IMongoCollection<Attachment> mongoCollection) {
+			Attachment result = await (await mongoCollection.FindAsync (x => x.ID == attachmentId)).FirstOrDefaultAsync ();
 			if (result == null)
-				return this.Error ($"There's no such attachment with ID={attachmentID}");
+				return this.Error (HttpStatusCode.NotFound,$"There's no such attachment with ID={attachmentId}");
 			Attachment newValue = result.Copy ();
 			newValue.OldVersionID = result.PostID;
 			newValue.PostID = Guid.Empty;
-			UpdateResult temp = await mongoCollection.UpdateOneAsync (x => x.ID == attachmentID, Extensions.GenerateUpdateDefinition (result, newValue));
+			UpdateResult temp = await mongoCollection.UpdateOneAsync (x => x.ID == attachmentId, Extensions.GenerateUpdateDefinition (result, newValue));
 			if (temp.IsAcknowledged)
 				return this.Success (null);
-			else return this.Error ("Removing attachment failed!");
+			else return this.Error (HttpStatusCode.InternalServerError,"Removing attachment failed!");
 		}
 
 		[HttpGet]
 		[Route ("oldposts")]
-		public async Task<IActionResult> GetOldVersionsOfPost(Guid postID, [FromServices] IMongoCollection<OldVersionOfPost> mongoCollection) {
-			var result = await (await mongoCollection.FindAsync (x => x.PostID == postID)).ToListAsync ();
+		public async Task<IActionResult> GetOldVersionsOfPost(Guid postId, [FromServices] IMongoCollection<OldVersionOfPost> mongoCollection) {
+			var result = await (await mongoCollection.FindAsync (x => x.PostID == postId)).ToListAsync ();
 			return this.Success (result);
 		}
 

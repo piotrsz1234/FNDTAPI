@@ -1,10 +1,10 @@
 ﻿using System;
-using FNDTAPI.DataModels.Interfaces;
-using FNDTAPI.DataModels.Shared;
+using FDNTAPI.DataModels.Interfaces;
+using FDNTAPI.DataModels.Shared;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace FNDTAPI.DataModels.Calendar {
+namespace FDNTAPI.DataModels.Calendar {
 	public class CalendarEventCategory : IDataModel {
 
 		/// <summary>
@@ -34,7 +34,7 @@ namespace FNDTAPI.DataModels.Calendar {
 		[BsonRequired]
 		public string Owner { get; set; }
 
-		public bool AreValueCorrect() {
+		public bool AreValuesCorrect() {
 			if (string.IsNullOrWhiteSpace (Owner) || string.IsNullOrWhiteSpace (Name))
 				return false;
 			return true;

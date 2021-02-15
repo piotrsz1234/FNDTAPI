@@ -1,9 +1,9 @@
 ﻿using System;
-using FNDTAPI.DataModels.Interfaces;
+using FDNTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace FNDTAPI.DataModels.Notifications {
+namespace FDNTAPI.DataModels.Notifications {
 	public abstract class Notification : IDataModel {
 
 		[BsonId]

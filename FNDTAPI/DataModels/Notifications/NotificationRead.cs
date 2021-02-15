@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace FNDTAPI.DataModels.Notifications {
-	public class NotificationRead {
+namespace FDNTAPI.DataModels.Notifications {
 
-		public Guid ID { get; set; }
-		public Guid NotificationID { get; set; }
-		public string User { get; set; }
+    public class NotificationRead {
 
-	}
+        public Guid ID { get; set; }
+        public Guid NotificationID { get; set; }
+        public string User { get; set; }
+
+    }
+
 }

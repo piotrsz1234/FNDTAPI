@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FNDTAPI.DataModels.Interfaces;
+using FDNTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace FNDTAPI.DataModels.Posts {
+namespace FDNTAPI.DataModels.Posts {
 
 	/// <summary>
 	/// Data Model for Post in Database.

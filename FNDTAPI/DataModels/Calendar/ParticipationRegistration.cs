@@ -1,9 +1,9 @@
 ﻿using System;
-using FNDTAPI.DataModels.Interfaces;
+using FDNTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace FNDTAPI.DataModels.Calendar {
+namespace FDNTAPI.DataModels.Calendar {
 
 	/// <summary>
 	/// Class, which represents registration of user in CalendarEvent.

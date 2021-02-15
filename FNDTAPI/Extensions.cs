@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
-using FNDTAPI.DataModels.Notifications;
+using FDNTAPI.DataModels.Notifications;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 
-namespace FNDTAPI {
+namespace FDNTAPI {
 	
 	/// <summary>
 	/// Static class with Extension Methods used in project and static methods, which helps a lot.
@@ -51,17 +53,7 @@ namespace FNDTAPI {
 			var temp = await collection.FindAsync (predicate);
 			return await temp.FirstOrDefaultAsync ();
 		}
-
-		/// <summary>
-		/// Converts number of a month to a string.
-		/// </summary>
-		/// <param name="t">Month's number</param>
-		/// <returns>String in which month is written with two digits.</returns>
-		public static string GenerateTwoDigitMonth(int t) {
-			if (t < 10) return $"0{t}";
-			else return t.ToString ();
-		}
-
+		
 		/// <summary>
 		/// Generates copy of an instance.
 		/// </summary>
@@ -73,13 +65,18 @@ namespace FNDTAPI {
 		}
 
 		[NonAction]
-		public static JsonResult Success(this ControllerBase controller, object details) {
-			return new JsonResult (new { Type = "Success", Details = details });
+		public static IActionResult Success(this ControllerBase controller, object details) {
+			if (details is string && details == "") return controller.Ok();
+			return new JsonResult (details);
 		}
 
 		[NonAction]
-		public static JsonResult Error (this ControllerBase controller, string details) {
-			return new JsonResult (new { Type = "Error", Details = details });
+		public static ActionResult Error (this ControllerBase controller, HttpStatusCode code=HttpStatusCode.NotFound, string details="") {
+			HttpResponseMessage temp = new HttpResponseMessage(code)
+			{
+				Content = new StringContent(details)
+			};
+			throw new System.Web.Http.HttpResponseException(temp);
 		}
 
 		[NonAction]

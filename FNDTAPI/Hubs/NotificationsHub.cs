@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FNDTAPI.DataModels.Notifications;
+using FDNTAPI.DataModels.Notifications;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Driver;
 
-namespace FNDTAPI.Hubs {
+namespace FDNTAPI.Hubs {
 	public class NotificationsHub : Hub {
 
 		private readonly IMongoCollection<Notification> notificationCollection;

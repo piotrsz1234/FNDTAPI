@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 
-namespace FNDTAPI.DataModels.Shared {
+namespace FDNTAPI.DataModels.Shared {
 	
 	/// <summary>
 	/// Represents data received, while uploading attachments to post.
