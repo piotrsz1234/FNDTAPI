@@ -22,10 +22,14 @@ namespace FDNTAPI {
 		public void ConfigureServices (IServiceCollection services) {
 			services.AddControllers ();
 			services.AddSignalR ();
-			AddingMongoDBToDependencyInjection (services);
+			string[] domainsForCors = Configuration.GetValue<string[]>("CORS Domains");
+			services.AddCors(x => x.AddDefaultPolicy(builder => {
+				builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyHeader();
+			}));
+			AddingMongoDbToDependencyInjection (services);
 		}
 
-		private void AddingMongoDBToDependencyInjection(IServiceCollection services) {
+		private void AddingMongoDbToDependencyInjection(IServiceCollection services) {
 			IMongoClient mongoClient = new MongoClient (Configuration.GetValue<string> ("MongoDBConnectionString"));
 			services.AddSingleton (mongoClient);
 			IMongoDatabase database = mongoClient.GetDatabase (Configuration.GetValue<string> ("MongoDBDatabaseName"));
@@ -53,7 +57,7 @@ namespace FDNTAPI {
 			app.UseRouting ();
 
 			app.UseAuthorization ();
-			
+			app.UseCors();
 			app.UseEndpoints (endpoints => {
 				endpoints.MapControllers ();
 				endpoints.MapHub<NotificationsHub> ("/notification");

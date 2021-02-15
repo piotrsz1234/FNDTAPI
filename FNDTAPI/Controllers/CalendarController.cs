@@ -115,7 +115,7 @@ namespace FDNTAPI.Controllers {
 		}
 
 		[HttpGet]
-		[Route("categories")]
+		[Route("category")]
 		public async Task<IActionResult> GetCategoryAsync(Guid categoryId,[FromServices] IMongoCollection<CalendarEventCategory> mongoCollection ) {
 			if (categoryId == Guid.Empty)
 				return this.Error(HttpStatusCode.UnprocessableEntity, "Category ID cannot be empty!");
