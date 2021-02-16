@@ -72,11 +72,8 @@ namespace FDNTAPI {
 
 		[NonAction]
 		public static ActionResult Error (this ControllerBase controller, HttpStatusCode code=HttpStatusCode.NotFound, string details="") {
-			HttpResponseMessage temp = new HttpResponseMessage(code)
-			{
-				Content = new StringContent(details)
-			};
-			throw new System.Web.Http.HttpResponseException(temp);
+			controller.Response.StatusCode = (int) code;
+			return controller.Content(details);
 		}
 
 		[NonAction]

@@ -63,7 +63,7 @@ namespace FDNTAPI.Controllers {
 		public async Task<IActionResult> DeletePostAsync (Guid id, [FromServices] IMongoCollection<Post> mongoCollection, [FromServices] IMongoCollection<OldVersionOfPost> oldCollection) {
 			Post currentValue = await (await mongoCollection.FindAsync (x => x.ID == id)).FirstOrDefaultAsync ();
 			if (currentValue == null)
-				return this.Error (HttpStatusCode.NotFound, $"There's no post with ID={id}");
+				return this.Error (HttpStatusCode.NotFound, $"There's no post with Id={id}");
 			if (currentValue.IsPublished) {
 				OldVersionOfPost temp = new OldVersionOfPost (currentValue) {
 					ID = Guid.NewGuid ()
@@ -83,7 +83,7 @@ namespace FDNTAPI.Controllers {
 				return this.Error (HttpStatusCode.UnprocessableEntity, "Sent post is null or has incorrect values or is already published. This action is for unpublished posts");
 			Post currentValue = await (await mongoCollection.FindAsync (x => x.ID == newPost.ID)).FirstOrDefaultAsync ();
 			if (currentValue == null || currentValue.IsPublished)
-				return this.Error (HttpStatusCode.NotFound, $"There's no such Post with ID: {newPost.ID} or is published. If it's published, use 'post/publish'.");
+				return this.Error (HttpStatusCode.NotFound, $"There's no such Post with Id: {newPost.ID} or is published. If it's published, use 'post/publish'.");
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == newPost.ID, Extensions.GenerateUpdateDefinition (currentValue, newPost));
 			if (result.IsAcknowledged)
 				return this.Success (newPost.ID);
@@ -155,7 +155,7 @@ namespace FDNTAPI.Controllers {
 		public async Task<IActionResult> RemoveAttachment (Guid attachmentId, [FromServices] IMongoCollection<Attachment> mongoCollection) {
 			Attachment result = await (await mongoCollection.FindAsync (x => x.ID == attachmentId)).FirstOrDefaultAsync ();
 			if (result == null)
-				return this.Error (HttpStatusCode.NotFound,$"There's no such attachment with ID={attachmentId}");
+				return this.Error (HttpStatusCode.NotFound,$"There's no such attachment with Id={attachmentId}");
 			Attachment newValue = result.Copy ();
 			newValue.OldVersionID = result.PostID;
 			newValue.PostID = Guid.Empty;

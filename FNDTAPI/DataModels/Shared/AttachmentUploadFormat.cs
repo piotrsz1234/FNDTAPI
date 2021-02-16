@@ -11,7 +11,7 @@ namespace FDNTAPI.DataModels.Shared {
 	public class AttachmentUploadFormat {
 
 		/// <summary>
-		/// ID of a Post.
+		/// Id of a Post.
 		/// </summary>
 		public Guid ID { get; set; }
 		/// <summary>

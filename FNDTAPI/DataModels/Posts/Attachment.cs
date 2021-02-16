@@ -12,13 +12,13 @@ namespace FDNTAPI.DataModels.Posts {
 	public class Attachment : IDataModel {
 
 		/// <summary>
-		/// ID of a <see cref="Attachment"/> in Database.
+		/// Id of a <see cref="Attachment"/> in Database.
 		/// </summary>
 		[BsonId]
 		[BsonRepresentation(BsonType.String)]
 		public Guid ID { get; set; }
 		/// <summary>
-		/// ID of a <see cref="Post"/>.
+		/// Id of a <see cref="Post"/>.
 		/// </summary>
 		[BsonRepresentation(BsonType.String)]
 		public Guid PostID { get; set; }

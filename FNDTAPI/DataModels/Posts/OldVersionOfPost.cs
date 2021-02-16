@@ -12,7 +12,7 @@ namespace FDNTAPI.DataModels.Posts {
 	public class OldVersionOfPost : IDataModel {
 
 		/// <summary>
-		/// ID of a version in Database.
+		/// Id of a version in Database.
 		/// </summary>
 		[BsonId]
 		[BsonRepresentation(BsonType.String)]

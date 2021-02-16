@@ -11,11 +11,11 @@ namespace FDNTAPI.DataModels.Calendar {
 	public class CalendarEvent : IDataModel {
 
 		/// <summary>
-		/// Unique ID of Event.
+		/// Unique Id of Event.
 		/// </summary>
 		[BsonId]
 		[BsonRepresentation (BsonType.String)]
-		public Guid ID { get; set; }
+		public Guid Id { get; set; }
 		/// <summary>
 		/// Name of Event.
 		/// </summary>

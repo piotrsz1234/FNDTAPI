@@ -11,7 +11,7 @@ namespace FDNTAPI.DataModels.TaskLists {
 	public class Task : IDataModel {
 
 		/// <summary>
-		/// ID of a Task.
+		/// Id of a Task.
 		/// </summary>
 		[BsonId]
 		[BsonRepresentation (BsonType.String)]

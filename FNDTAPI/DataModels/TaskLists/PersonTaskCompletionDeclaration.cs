@@ -10,7 +10,7 @@ namespace FDNTAPI.DataModels.TaskLists {
 	public class PersonTaskCompletionDeclaration : IDataModel {
 
 		/// <summary>
-		/// ID of a declaration.
+		/// Id of a declaration.
 		/// </summary>
 		[BsonId]
 		[BsonRepresentation (BsonType.String)]

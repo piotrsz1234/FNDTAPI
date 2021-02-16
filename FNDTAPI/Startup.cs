@@ -24,7 +24,7 @@ namespace FDNTAPI {
 			services.AddSignalR ();
 			string[] domainsForCors = Configuration.GetValue<string[]>("CORS Domains");
 			services.AddCors(x => x.AddDefaultPolicy(builder => {
-				builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyHeader();
+				builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
 			}));
 			AddingMongoDbToDependencyInjection (services);
 		}

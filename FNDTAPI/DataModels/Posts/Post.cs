@@ -15,7 +15,7 @@ namespace FDNTAPI.DataModels.Posts {
 	public class Post : IDataModel {
 		
 		/// <summary>
-		/// ID of a <see cref="Post"/> in Database.
+		/// Id of a <see cref="Post"/> in Database.
 		/// </summary>
 		[BsonRepresentation(BsonType.String)]
 		[BsonId]

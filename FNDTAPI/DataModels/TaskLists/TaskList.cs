@@ -21,10 +21,6 @@ namespace FDNTAPI.DataModels.TaskLists {
 		[BsonRequired]
 		public string Name { get; set; }
 		/// <summary>
-		/// Is Task List belongs to person or Calendar Event.
-		/// </summary>
-		public bool IsPersonal { get; set; }
-		/// <summary>
 		/// Contains information about owner/creator.
 		/// </summary>
 		public string Owner { get; set; }
