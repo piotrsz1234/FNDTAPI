@@ -26,7 +26,7 @@ namespace FDNTAPI.DataModels.Calendar {
 		/// </summary>
 		[BsonRequired]
 		[BsonRepresentation (BsonType.String)]
-		public Guid CalendarEventID { get; set; }
+		public Guid CalendarEventId { get; set; }
 		/// <summary>
 		/// Tells, if creator of event confirmed registration.
 		/// </summary>
@@ -39,7 +39,7 @@ namespace FDNTAPI.DataModels.Calendar {
 		public bool HasParticipantConfirmed { get; set; }
 
 		public bool AreValuesCorrect() {
-			if (string.IsNullOrWhiteSpace (User) || CalendarEventID == Guid.Empty)
+			if (string.IsNullOrWhiteSpace (User) || CalendarEventId == Guid.Empty)
 				return false;
 			return true;
 		}

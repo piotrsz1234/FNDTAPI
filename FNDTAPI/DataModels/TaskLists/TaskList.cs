@@ -34,7 +34,7 @@ namespace FDNTAPI.DataModels.TaskLists {
         public DateTime Deadline { get; set; }
 
         public bool AreValuesCorrect() {
-            return !string.IsNullOrWhiteSpace(Name);
+            return !string.IsNullOrEmpty(Name);
         }
 
     }

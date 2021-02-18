@@ -18,7 +18,8 @@ namespace FDNTAPI.Controllers {
         [HttpPost]
         [Route("tasklists")]
         public async Task<IActionResult> AddTaskListAsync(TaskList taskList,
-            [FromServices] IMongoCollection<TaskList> mongoCollection) {
+            [FromServices] IMongoCollection<TaskList> mongoCollection,
+            [FromServices] IMongoCollection<CalendarEvent> eventCollection) {
             if (taskList == null || !taskList.AreValuesCorrect())
                 return this.Error(HttpStatusCode.UnprocessableEntity, "TaskList is null or it's properties are empty!");
             taskList.ID = Guid.NewGuid();
@@ -62,7 +63,9 @@ namespace FDNTAPI.Controllers {
 
             if (result.IsAcknowledged && result2.IsAcknowledged && removalOfDeclarations)
                 return this.Success("");
-            else return this.Error(HttpStatusCode.InternalServerError,"Something failed. Most likely some mentions of given TaskList were not removed.");
+            else
+                return this.Error(HttpStatusCode.InternalServerError,
+                    "Something failed. Most likely some mentions of given TaskList were not removed.");
             ;
         }
 
@@ -79,9 +82,9 @@ namespace FDNTAPI.Controllers {
                 await (await registrationMongoCollection.FindAsync(x => x.User == owner)).ToListAsync();
             foreach (ParticipationRegistration item in registrations) {
                 CalendarEvent calendarEvent =
-                    await eventsMongoCollection.FirstOrDefaultAsync(x => x.Id == item.CalendarEventID);
+                    await eventsMongoCollection.FirstOrDefaultAsync(x => x.Id == item.CalendarEventId);
                 if (calendarEvent == null) {
-                    await registrationMongoCollection.DeleteManyAsync(x => x.CalendarEventID == item.CalendarEventID);
+                    await registrationMongoCollection.DeleteManyAsync(x => x.CalendarEventId == item.CalendarEventId);
                     continue;
                 }
 
@@ -109,25 +112,23 @@ namespace FDNTAPI.Controllers {
         public async Task<IActionResult> AddTaskListToEventAsync(Dictionary<string, string> data,
             [FromServices] IMongoCollection<TaskList> mongoCollection,
             [FromServices] IMongoCollection<CalendarEvent> eventsMongoCollection) {
-            Guid eventID = Guid.Parse(data["eventID"]);
-            TaskList value = JsonConvert.DeserializeObject<TaskList>(data["taskList"]);
-            if (eventID == Guid.Empty)
+            Guid eventId = Guid.Parse(data["eventID"]);
+            Guid value = JsonConvert.DeserializeObject<Guid>(data["taskListId"]);
+            if (eventId == Guid.Empty)
                 return this.Error(HttpStatusCode.UnprocessableEntity, "EventID is empty!");
-            if (value == null || !value.AreValuesCorrect())
+            if (value == Guid.Empty)
                 return this.Error(HttpStatusCode.UnprocessableEntity,
-                    "Sended taskList is null or has empty properties!");
-            CalendarEvent calendarEvent = await eventsMongoCollection.FirstOrDefaultAsync(x => x.Id == eventID);
+                    "Sent taskList id is empty!");
+            CalendarEvent calendarEvent = await eventsMongoCollection.FirstOrDefaultAsync(x => x.Id == eventId);
             if (calendarEvent == null)
                 return this.Error(HttpStatusCode.NotFound, "There's no Calendar Event with given eventID!");
             if (calendarEvent.TaskListID != Guid.Empty)
                 return this.Error(HttpStatusCode.BadRequest, "Given Event already has the TaskList!");
-            value.ID = Guid.NewGuid();
-            await mongoCollection.InsertOneAsync(value);
             CalendarEvent newValue = calendarEvent;
-            newValue.TaskListID = value.ID;
-            await eventsMongoCollection.UpdateOneAsync(x => x.Id == eventID,
+            newValue.TaskListID = value;
+            await eventsMongoCollection.UpdateOneAsync(x => x.Id == eventId,
                 Extensions.GenerateUpdateDefinition(calendarEvent, newValue));
-            return this.Success(value.ID);
+            return Ok();
         }
 
         [HttpPatch]
@@ -154,7 +155,7 @@ namespace FDNTAPI.Controllers {
         public async Task<IActionResult> AddTaskAsync(DataModels.TaskLists.Task task,
             [FromServices] IMongoCollection<DataModels.TaskLists.Task> mongoCollection) {
             if (task == null || !task.AreValuesCorrect())
-                return this.Error(HttpStatusCode.UnprocessableEntity,"Task is null or it's properties are empty!");
+                return this.Error(HttpStatusCode.UnprocessableEntity, "Task is null or it's properties are empty!");
             task.ID = Guid.NewGuid();
             await mongoCollection.InsertOneAsync(task);
             return this.Success(task.ID);
