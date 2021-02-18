@@ -21,6 +21,10 @@ namespace FDNTAPI.DataModels.Posts {
 		[BsonId]
 		public Guid ID { get; set; }
 		/// <summary>
+		/// Title of a <see cref="Post"/>
+		/// </summary>
+		public string Title { get; set; }
+		/// <summary>
 		/// HTML of a <see cref="Post"/>, which also contains images.
 		/// </summary>
 		public string Html { get; set; }

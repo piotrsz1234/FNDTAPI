@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
@@ -92,5 +93,13 @@ namespace FDNTAPI {
 			await mongoCollection.InsertOneAsync (notification);
 		}
 
+		public static IEnumerable<T> Subset<T>(this IEnumerable<T> enumerable, int startIndex, int length) {
+			int howMany = enumerable.Count() - startIndex;
+			if (howMany > length) howMany = length;
+			for (int i = 0; i < length; i++) {
+				yield return enumerable.ElementAt(startIndex + i);
+			}
+		}
+		
 	}
 }

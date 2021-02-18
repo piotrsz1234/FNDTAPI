@@ -41,9 +41,9 @@ namespace FDNTAPI.Controllers {
             if (temp.Owner != owner)
                 return this.Error(HttpStatusCode.Forbidden, "You have not permission.");
             DeleteResult result = await mongoCollection.DeleteOneAsync(x => x.ID == taskListID);
-            DeleteResult result2 = await taskCollection.DeleteManyAsync(x => x.OwnerID == taskListID);
+            DeleteResult result2 = await taskCollection.DeleteManyAsync(x => x.OwnerId == taskListID);
             List<DataModels.TaskLists.Task> list =
-                await (await taskCollection.FindAsync(x => x.OwnerID == taskListID)).ToListAsync();
+                await (await taskCollection.FindAsync(x => x.OwnerId == taskListID)).ToListAsync();
             bool removalOfDeclarations = true;
             foreach (Guid item in list.Select(x => x.ID)) {
                 DeleteResult result3 = await declarationCollection.DeleteManyAsync(x => x.Task == item);
@@ -166,7 +166,7 @@ namespace FDNTAPI.Controllers {
             [FromServices] IMongoCollection<DataModels.TaskLists.Task> mongoCollection,
             [FromServices] IMongoCollection<TaskList> taskListMongoCollection,
             [FromServices] IMongoCollection<PersonTaskCompletionDeclaration> declarationsMongoCollection) {
-            Guid taskID = Guid.Parse(data["taskID"]);
+            Guid taskID = Guid.Parse(data["taskId"]);
             string owner = data["owner"];
             DataModels.TaskLists.Task task = await mongoCollection.FirstOrDefaultAsync(x => x.ID == taskID);
             if (task == null) return this.Error(HttpStatusCode.NotFound, "There's no such Task!");
@@ -205,7 +205,7 @@ namespace FDNTAPI.Controllers {
         public async Task<IActionResult> GetTasksAsync(Guid taskListID,
             [FromServices] IMongoCollection<DataModels.TaskLists.Task> mongoCollection) {
             IAsyncCursor<DataModels.TaskLists.Task> cursor =
-                await mongoCollection.FindAsync(x => x.OwnerID == taskListID);
+                await mongoCollection.FindAsync(x => x.OwnerId == taskListID);
             return this.Success(await cursor.ToListAsync());
         }
 
@@ -235,7 +235,7 @@ namespace FDNTAPI.Controllers {
         [Route("declarations")]
         public async Task<IActionResult> DeleteDeclarationAsync(Dictionary<string, string> data,
             [FromServices] IMongoCollection<PersonTaskCompletionDeclaration> mongoCollection) {
-            Guid taskID = Guid.Parse(data["taskID"]);
+            Guid taskID = Guid.Parse(data["taskId"]);
             string person = data["owner"];
             DeleteResult result = await mongoCollection.DeleteOneAsync(x => x.Person == person && x.Task == taskID);
             if (result.IsAcknowledged) return Ok();
@@ -246,10 +246,10 @@ namespace FDNTAPI.Controllers {
 
         [HttpGet]
         [Route("declarations")]
-        public async Task<IActionResult> GetDeclarations(Guid taskID,
+        public async Task<IActionResult> GetDeclarations(Guid taskId,
             [FromServices] IMongoCollection<PersonTaskCompletionDeclaration> mongoCollection) {
             IAsyncCursor<PersonTaskCompletionDeclaration> cursor =
-                await mongoCollection.FindAsync(x => x.Task == taskID);
+                await mongoCollection.FindAsync(x => x.Task == taskId);
             return this.Success(await cursor.ToListAsync());
         }
 

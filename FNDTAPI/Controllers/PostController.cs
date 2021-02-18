@@ -92,18 +92,24 @@ namespace FDNTAPI.Controllers {
 
 		[HttpGet]
 		[Route ("posts")]
-		public async Task<IActionResult> GetAvailablePosts (string email, string group, [FromServices] IMongoCollection<Post> mongoCollection) {
+		public async Task<IActionResult> GetAvailablePosts (string email, string groups, int howMany, int fromWhere, [FromServices] IMongoCollection<Post> mongoCollection) {
 			List<Post> result = new List<Post> ();
-			using (var cursor = await mongoCollection.FindAsync (x => x != null)) {
+			using (var cursor = await mongoCollection.FindAsync (x => true)) {
+				if (cursor == null) return this.Success("[]");
 				do {
-					result.AddRange (cursor.Current.Where (x => x.ForWho.Contains (email) || group.Split('\n').Any(y => group.Contains(y))));
+					if (cursor.Current == null) continue;
+					var temp = cursor.Current?.Where(x =>
+						x.ForWho.Contains(email) || groups.Split('\n').Any(y => x.ForWho.Contains(y)));
+					if(temp != null)
+						result.AddRange (temp);
 				} while (await cursor.MoveNextAsync ());
 			}
-			return this.Success (result);
+			result.Sort((x, y) => DateTime.Compare(x.PublishTime, y.PublishTime));
+			return this.Success (result.Subset(fromWhere, howMany));
 		}
 
 		[HttpGet]
-		[Route ("posts")]
+		[Route ("posts/mine")]
 		public async Task<IActionResult> GetMinePost (string user, [FromServices] IMongoCollection<Post> mongoCollection) {
 			var result = await (await mongoCollection.FindAsync (x => x.Owner == user)).ToListAsync ();
 			return this.Success (result);

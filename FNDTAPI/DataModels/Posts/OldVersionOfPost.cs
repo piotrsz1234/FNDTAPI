@@ -35,7 +35,11 @@ namespace FDNTAPI.DataModels.Posts {
 		/// For who this version of a <see cref="Post"/> was dedicated.
 		/// </summary>
 		public string ForWho { get; set; }
-
+		/// <summary>
+		/// Title of this version of a post.
+		/// </summary>
+		public string Title { get; set; }
+		
 		/// <summary>
 		/// Creates empty instance of an <see cref="OldVersionOfPost"/>.
 		/// </summary>
@@ -50,6 +54,7 @@ namespace FDNTAPI.DataModels.Posts {
 			PublishTime = post.PublishTime;
 			Html = post.Html;
 			ForWho = post.ForWho;
+			Title = post.Title;
 		}
 
 		public bool AreValuesCorrect () {
