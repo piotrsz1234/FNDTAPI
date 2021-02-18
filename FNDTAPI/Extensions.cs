@@ -96,7 +96,7 @@ namespace FDNTAPI {
 		public static IEnumerable<T> Subset<T>(this IEnumerable<T> enumerable, int startIndex, int length) {
 			int howMany = enumerable.Count() - startIndex;
 			if (howMany > length) howMany = length;
-			for (int i = 0; i < length; i++) {
+			for (int i = 0; i < howMany; i++) {
 				yield return enumerable.ElementAt(startIndex + i);
 			}
 		}

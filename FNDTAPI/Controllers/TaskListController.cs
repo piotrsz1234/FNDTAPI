@@ -254,6 +254,25 @@ namespace FDNTAPI.Controllers {
             return this.Success(await cursor.ToListAsync());
         }
 
+        [HttpPatch]
+        [Route("declarations")]
+        public async Task<IActionResult> UpdateDeclarationAsync(PersonTaskCompletionDeclaration declaration,
+            [FromServices] IMongoCollection<PersonTaskCompletionDeclaration> mongoCollection) {
+            Guid declarationId = declaration.ID;
+            if (declarationId == Guid.Empty)
+                return this.Error(HttpStatusCode.UnprocessableEntity, "Sent Guid is empty!");
+            var result = await mongoCollection.FirstOrDefaultAsync(x => x.ID == declarationId);
+            if (result == null)
+                return this.Error(HttpStatusCode.NotFound, "There's no such Declaration!");
+            var newValue = result;
+            newValue.IsCompleted = true;
+            var output = await mongoCollection.UpdateOneAsync(x => x.ID == declarationId,
+                Extensions.GenerateUpdateDefinition(result, newValue));
+            return output.IsAcknowledged
+                ? Ok()
+                : this.Error(HttpStatusCode.InternalServerError, "Update process somehow failed!");
+        }
+
     }
 
 }

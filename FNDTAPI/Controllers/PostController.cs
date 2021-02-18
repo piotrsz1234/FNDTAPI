@@ -95,13 +95,11 @@ namespace FDNTAPI.Controllers {
 		public async Task<IActionResult> GetAvailablePosts (string email, string groups, int howMany, int fromWhere, [FromServices] IMongoCollection<Post> mongoCollection) {
 			List<Post> result = new List<Post> ();
 			using (var cursor = await mongoCollection.FindAsync (x => true)) {
-				if (cursor == null) return this.Success("[]");
 				do {
 					if (cursor.Current == null) continue;
 					var temp = cursor.Current?.Where(x =>
 						x.ForWho.Contains(email) || groups.Split('\n').Any(y => x.ForWho.Contains(y)));
-					if(temp != null)
-						result.AddRange (temp);
+					result.AddRange (temp);
 				} while (await cursor.MoveNextAsync ());
 			}
 			result.Sort((x, y) => DateTime.Compare(x.PublishTime, y.PublishTime));
