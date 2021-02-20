@@ -48,7 +48,7 @@ namespace FDNTAPI.Controllers {
             bool removalOfDeclarations = true;
             foreach (Guid item in list.Select(x => x.ID)) {
                 DeleteResult result3 = await declarationCollection.DeleteManyAsync(x => x.Task == item);
-                removalOfDeclarations = removalOfDeclarations && result3.IsAcknowledged;
+                removalOfDeclarations = result3.IsAcknowledged;
                 if (!removalOfDeclarations) break;
             }
 
@@ -79,19 +79,14 @@ namespace FDNTAPI.Controllers {
             IAsyncCursor<TaskList> cursor = await mongoCollection.FindAsync(x => x.Owner == owner);
             List<TaskList> output = await cursor.ToListAsync();
             List<ParticipationRegistration> registrations =
-                await (await registrationMongoCollection.FindAsync(x => x.User == owner)).ToListAsync();
+                await (await registrationMongoCollection.FindAsync(x => x.User == owner && x.HasOwnerConfirmed && x.HasParticipantConfirmed)).ToListAsync();
             foreach (ParticipationRegistration item in registrations) {
                 CalendarEvent calendarEvent =
                     await eventsMongoCollection.FirstOrDefaultAsync(x => x.Id == item.CalendarEventId);
-                if (calendarEvent == null) {
-                    await registrationMongoCollection.DeleteManyAsync(x => x.CalendarEventId == item.CalendarEventId);
-                    continue;
-                }
-
                 if (calendarEvent.TaskListID == Guid.Empty) continue;
                 output.Add(await mongoCollection.FirstOrDefaultAsync(x => x.ID == calendarEvent.TaskListID));
             }
-
+            output.AddRange(await (await mongoCollection.FindAsync(x => x.Owner == owner)).ToListAsync());
             output.RemoveAll(x => x == null);
             return this.Success(new HashSet<TaskList>(output));
         }
@@ -104,6 +99,8 @@ namespace FDNTAPI.Controllers {
             if (eventID == Guid.Empty)
                 return this.Error(HttpStatusCode.UnprocessableEntity, "Guid is empty!");
             CalendarEvent calendarEvent = await eventsMongoCollection.FirstOrDefaultAsync(x => x.Id == eventID);
+            if (calendarEvent == null)
+                return this.Error(HttpStatusCode.NotFound, "There's no such CalendarEvent");
             return this.Success(await mongoCollection.FirstOrDefaultAsync(x => x.ID == calendarEvent.TaskListID));
         }
 
@@ -177,7 +174,7 @@ namespace FDNTAPI.Controllers {
 
             DeleteResult result = await mongoCollection.DeleteOneAsync(x => x.ID == taskID);
             DeleteResult result2 = await declarationsMongoCollection.DeleteManyAsync(x => x.Task == taskID);
-            if (result.IsAcknowledged && result2.IsAcknowledged) return this.Success("");
+            if (result.IsAcknowledged && result2.IsAcknowledged) return Ok();
             else return this.Error(HttpStatusCode.InternalServerError, "Deletion failed for some reason!");
         }
 

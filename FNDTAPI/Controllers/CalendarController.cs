@@ -11,19 +11,10 @@ using MongoDB.Driver;
 
 namespace FDNTAPI.Controllers {
 
-    /// <summary>
-    /// Controller, which contains actions for Calendar Event and Participation Registration.
-    /// </summary>
     [Route("api/v1.0/[controller]")]
     [ApiController]
     public class CalendarController : ControllerBase {
 
-        /// <summary>
-        /// [HTTP POST] Adds <see cref="CalendarEvent"/> to database.
-        /// </summary>
-        /// <param name="calendarEvent">Calendar Event to add.</param>
-        /// <param name="mongoCollection">Mongo collection, where value will be added. Dependency Injection handles that value.</param>
-        /// <returns>As a result returns Json with Guid of added calendar event.</returns>
         [HttpPost]
         [Route("events")]
         public async Task<IActionResult> AddCalendarEventAsync(CalendarEvent calendarEvent,
@@ -40,13 +31,6 @@ namespace FDNTAPI.Controllers {
             return this.Success(calendarEvent.Id);
         }
 
-        /// <summary>
-        /// [HTTP DELETE] Deletes <see cref="CalendarEvent"/> from database.
-        /// </summary>
-        /// <param name="data">Generated from body of a HTTP Request.</param>
-        /// <param name="mongoCollection">Provided by Dependency Injection.</param>
-        /// <param name="particiationCollection">Provided by Dependency Injection.</param>
-        /// <returns>Returns 200OK, when succeeded, 403Forbidden, if person who didn't created object tries to delete it, 404NotFound if there's no event with given Id.</returns>
         [HttpDelete]
         [Route("events")]
         public async Task<IActionResult> DeleteCalendarEventAsync(Dictionary<string, string> data,
@@ -68,13 +52,6 @@ namespace FDNTAPI.Controllers {
             else return this.Error(HttpStatusCode.InternalServerError, "Failed to remove object or it's mentions!");
         }
 
-        /// <summary>
-        /// [HTTP GET] Returns <see cref="JsonResult"/> with List of <see cref="CalendarEvent"/>, where each element meets given conditions.
-        /// </summary>
-        /// <param name="groups">Group to which user belongs. If there's more, separate them with symbol of new line.</param>
-        /// <param name="email">Email of a user.</param>
-        /// <param name="mongoCollection">Provided by Dependency Injection.</param>
-        /// <returns><see cref="JsonResult"/> with List of <see cref="CalendarEvent"/></returns>
         [HttpGet]
         [Route("events")]
         public async Task<IActionResult> GetCalendarEventsAsync(string groups, string email,
@@ -92,12 +69,6 @@ namespace FDNTAPI.Controllers {
             return this.Success(result);
         }
 
-        /// <summary>
-        /// [HTTP PATCH] Updates given <see cref="CalendarEvent"/>.
-        /// </summary>
-        /// <param name="calendarEvent">New value, which should be stored in database. DO NOT change value of a Id!</param>
-        /// <param name="mongoCollection">Provided by Dependency Injection.</param>
-        /// <returns>Returns 200OK, when succeeded, 404NotFound, if there's no event with given Id, Json with error value if code somehow fails.</returns>
         [HttpPatch]
         [Route("events")]
         public async Task<IActionResult> UpdateCalendarEventAsync(CalendarEvent calendarEvent,
@@ -115,13 +86,6 @@ namespace FDNTAPI.Controllers {
             else return this.Error(HttpStatusCode.InternalServerError, "Value wasn't updated!");
         }
 
-        /// <summary>
-        /// [HTTP GET] Returns List of <see cref="CalendarEventCategory"/>, which belongs to given groups or person.
-        /// </summary>
-        /// <param name="groups">Group, whose Categories you want to get.</param>
-        /// <param name="email">Person's email, whose Categories you want to get.</param>
-        /// <param name="mongoCollection">Provided by Dependency Injection.</param>
-        /// <returns>Json with List of <see cref="CalendarEventCategory"/>, which met conditions.</returns>
         [HttpGet]
         [Route("categories")]
         public async Task<IActionResult> GetCategoriesAsync(string groups, string email,
@@ -152,12 +116,6 @@ namespace FDNTAPI.Controllers {
             return this.Success(result);
         }
 
-        /// <summary>
-        /// [HTTP POST] Adds <see cref="CalendarEventCategory"/> to database.
-        /// </summary>
-        /// <param name="category">Value to be added.</param>
-        /// <param name="mongoCollection">Provided by Dependency Injection.</param>
-        /// <returns>Json with Id of the added value or information about error.</returns>
         [HttpPost]
         [Route("categories")]
         public async Task<IActionResult> AddCategoryAsync(CalendarEventCategory category,
@@ -170,12 +128,6 @@ namespace FDNTAPI.Controllers {
             return this.Success(category.ID);
         }
 
-        /// <summary>
-        /// [HTTP PATCH] Updates <see cref="CalendarEventCategory"/> in database.
-        /// </summary>
-        /// <param name="category">New value, which should be stored in database. DO NOT change value of a Id!</param>
-        /// <param name="mongoCollection">Provided by Dependency Injection.</param>
-        /// <returns>Returns 200OK, when succeeded, 404NotFound, if there's no event with given Id, Json with error value if code somehow fails.</returns>
         [HttpPatch]
         [Route("categories")]
         public async Task<IActionResult> UpdateCategoryAsync(CalendarEventCategory category,
@@ -193,12 +145,6 @@ namespace FDNTAPI.Controllers {
             else return this.Error(HttpStatusCode.InternalServerError, "Value wasn't updated!");
         }
 
-        /// <summary>
-        /// [HTTP POST] Adds <see cref="ParticipationRegistration"/> to database.
-        /// </summary>
-        /// <param name="registration">User's registration</param>
-        /// <param name="mongoCollection">Provided by Dependency Injection</param>
-        /// <returns>Returns Guid of added value.</returns>
         [HttpPost]
         [Route("participations")]
         public async Task<IActionResult> RegisterParticiationDeclarationAsync(ParticipationRegistration registration,
@@ -216,12 +162,6 @@ namespace FDNTAPI.Controllers {
             return this.Success(registration.ID);
         }
 
-        /// <summary>
-        /// [HTTP DELETE] Deletes from database given <see cref="ParticipationRegistration"/>.
-        /// </summary>
-        /// <param name="registration">Registration to deletion.</param>
-        /// <param name="mongoCollection">Provided by Dependency Injection.</param>
-        /// <returns>Returns 200OK if finds given registration, otherwise 404NotFound.</returns>
         [HttpDelete]
         [Route("participations")]
         public async Task<IActionResult> RemoveParticiationDeclarationAsync(Dictionary<string, string> data,
@@ -238,12 +178,6 @@ namespace FDNTAPI.Controllers {
             else return this.Error(HttpStatusCode.NotFound, "There's no such ParticipationRegistration!");
         }
 
-        /// <summary>
-        /// [HTTP GET] Gets from database list of <see cref="ParticipationRegistration"/>s.
-        /// </summary>
-        /// <param name="eventID"><see cref="Guid"/> of the event</param>
-        /// <param name="mongoCollection">Provided by Dependency Injection</param>
-        /// <returns>JsonResult with list of registrations.</returns>
         [HttpGet]
         [Route("participations")]
         public async Task<IActionResult> GetParticiationDeclarationsAsync(Guid eventID,
