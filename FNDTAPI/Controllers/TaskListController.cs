@@ -146,8 +146,8 @@ namespace FDNTAPI.Controllers {
             UpdateResult result = await mongoCollection.UpdateOneAsync(x => x.ID == taskList.ID,
                 Extensions.GenerateUpdateDefinition(currentValue, taskList));
 
-            if (result.IsAcknowledged) return this.Success("");
-            else return this.Error(HttpStatusCode.InternalServerError, "Update somehow failed!");
+            if (result.IsAcknowledged) return Ok();
+            return this.Error(HttpStatusCode.InternalServerError, "Update somehow failed!");
         }
 
         [HttpPost]

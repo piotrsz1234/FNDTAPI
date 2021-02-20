@@ -49,7 +49,7 @@ namespace FDNTAPI.Controllers {
 			};
 			if (!currentValue.IsPublished)
 				await oldCollection.InsertOneAsync (oldVersion);
-			await this.AddNotificationAsync (new NewPostNotification (Guid.NewGuid (), newPost.ForWho, newPost.Owner, newPost.ID), notificationsCollection);
+			if(newPost.ID == Guid.Empty) newPost.ID = Guid.NewGuid();
 			newPost.PublishTime = DateTime.Now;
 			newPost.IsPublished = true;
 			UpdateResult result = await mongoCollection.UpdateOneAsync (x => x.ID == newPost.ID, Extensions.GenerateUpdateDefinition (currentValue, newPost));
@@ -60,20 +60,20 @@ namespace FDNTAPI.Controllers {
 
 		[HttpDelete]
 		[Route ("posts")]
-		public async Task<IActionResult> DeletePostAsync (Guid id, [FromServices] IMongoCollection<Post> mongoCollection, [FromServices] IMongoCollection<OldVersionOfPost> oldCollection) {
-			Post currentValue = await (await mongoCollection.FindAsync (x => x.ID == id)).FirstOrDefaultAsync ();
+		public async Task<IActionResult> DeletePostAsync (Post post, [FromServices] IMongoCollection<Post> mongoCollection, [FromServices] IMongoCollection<OldVersionOfPost> oldCollection) {
+			Post currentValue = await (await mongoCollection.FindAsync (x => x.ID == post.ID)).FirstOrDefaultAsync ();
 			if (currentValue == null)
-				return this.Error (HttpStatusCode.NotFound, $"There's no post with Id={id}");
+				return this.Error (HttpStatusCode.NotFound, $"There's no post with Id={post.ID}");
 			if (currentValue.IsPublished) {
 				OldVersionOfPost temp = new OldVersionOfPost (currentValue) {
 					ID = Guid.NewGuid ()
 				};
 				await oldCollection.InsertOneAsync (temp);
 			}
-			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.ID == id);
+			DeleteResult result = await mongoCollection.DeleteOneAsync (x => x.ID == post.ID);
 			if (result.IsAcknowledged)
 				return this.Ok ();
-			else return this.Error (HttpStatusCode.InternalServerError, "Deleting of a post failed!");
+			return this.Error (HttpStatusCode.InternalServerError, "Deleting of a post failed!");
 		}
 
 		[HttpPatch]
@@ -94,7 +94,7 @@ namespace FDNTAPI.Controllers {
 		[Route ("posts")]
 		public async Task<IActionResult> GetAvailablePosts (string email, string groups, int howMany, int fromWhere, [FromServices] IMongoCollection<Post> mongoCollection) {
 			List<Post> result = new List<Post> ();
-			using (var cursor = await mongoCollection.FindAsync (x => true)) {
+			using (var cursor = await mongoCollection.FindAsync (x => x.IsPublished)) {
 				do {
 					if (cursor.Current == null) continue;
 					var temp = cursor.Current?.Where(x =>
