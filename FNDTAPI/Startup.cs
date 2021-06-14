@@ -1,10 +1,10 @@
+using System.IO.Compression;
 using FDNTAPI.DataModels.Calendar;
-using FDNTAPI.DataModels.Notifications;
 using FDNTAPI.DataModels.Posts;
 using FDNTAPI.DataModels.TaskLists;
-using FDNTAPI.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,7 +21,6 @@ namespace FDNTAPI {
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices (IServiceCollection services) {
 			services.AddControllers ();
-			services.AddSignalR ();
 			string[] domainsForCors = Configuration.GetValue<string[]>("CORS Domains");
 			services.AddCors(x => x.AddDefaultPolicy(builder => {
 				builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
@@ -41,9 +40,6 @@ namespace FDNTAPI {
 			services.AddSingleton (database.GetCollection<CalendarEventCategory> (Configuration.GetValue<string> ("CalendarEventCategoryCollectionName")));
 			services.AddSingleton (database.GetCollection<Post> (Configuration.GetValue<string> ("PostCollectionName")));
 			services.AddSingleton (database.GetCollection<OldVersionOfPost> (Configuration.GetValue<string> ("OldVersionOfPostCollectionName")));
-			services.AddSingleton (database.GetCollection<Attachment> (Configuration.GetValue<string> ("AttachmentCollectionName")));
-			services.AddSingleton (database.GetCollection<Notification> (Configuration.GetValue<string> ("NotificationCollectionName")));
-			services.AddSingleton (database.GetCollection<NotificationRead> (Configuration.GetValue<string> ("NotificationsReadCollectionName")));
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -53,14 +49,12 @@ namespace FDNTAPI {
 			}
 
 			app.UseHttpsRedirection ();
-			
 			app.UseRouting ();
 
 			app.UseAuthorization ();
 			app.UseCors();
 			app.UseEndpoints (endpoints => {
 				endpoints.MapControllers ();
-				endpoints.MapHub<NotificationsHub> ("/notification");
 			});
 		}
 	}

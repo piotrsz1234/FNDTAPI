@@ -22,9 +22,9 @@ namespace FDNTAPI.Controllers {
             [FromServices] IMongoCollection<CalendarEvent> eventCollection) {
             if (taskList == null || !taskList.AreValuesCorrect())
                 return this.Error(HttpStatusCode.UnprocessableEntity, "TaskList is null or it's properties are empty!");
-            taskList.ID = Guid.NewGuid();
+            taskList.Id = Guid.NewGuid();
             await mongoCollection.InsertOneAsync(taskList);
-            return this.Success(taskList.ID);
+            return this.Success(taskList.Id);
         }
 
         [HttpDelete]
@@ -36,17 +36,17 @@ namespace FDNTAPI.Controllers {
             [FromServices] IMongoCollection<CalendarEvent> eventsMongoCollection) {
             Guid taskListID = Guid.Parse(data["taskListID"]);
             string owner = data["owner"];
-            TaskList temp = await (await mongoCollection.FindAsync(x => x.ID == taskListID)).FirstOrDefaultAsync();
+            TaskList temp = await (await mongoCollection.FindAsync(x => x.Id == taskListID)).FirstOrDefaultAsync();
             if (temp == null)
                 return this.Error(HttpStatusCode.NotFound, "There's no TaskList with given Id!");
             if (temp.Owner != owner)
                 return this.Error(HttpStatusCode.Forbidden, "You have not permission.");
-            DeleteResult result = await mongoCollection.DeleteOneAsync(x => x.ID == taskListID);
+            DeleteResult result = await mongoCollection.DeleteOneAsync(x => x.Id == taskListID);
             DeleteResult result2 = await taskCollection.DeleteManyAsync(x => x.OwnerId == taskListID);
             List<DataModels.TaskLists.Task> list =
                 await (await taskCollection.FindAsync(x => x.OwnerId == taskListID)).ToListAsync();
             bool removalOfDeclarations = true;
-            foreach (Guid item in list.Select(x => x.ID)) {
+            foreach (Guid item in list.Select(x => x.Id)) {
                 DeleteResult result3 = await declarationCollection.DeleteManyAsync(x => x.Task == item);
                 removalOfDeclarations = result3.IsAcknowledged;
                 if (!removalOfDeclarations) break;
@@ -84,7 +84,7 @@ namespace FDNTAPI.Controllers {
                 CalendarEvent calendarEvent =
                     await eventsMongoCollection.FirstOrDefaultAsync(x => x.Id == item.CalendarEventId);
                 if (calendarEvent.TaskListID == Guid.Empty) continue;
-                output.Add(await mongoCollection.FirstOrDefaultAsync(x => x.ID == calendarEvent.TaskListID));
+                output.Add(await mongoCollection.FirstOrDefaultAsync(x => x.Id == calendarEvent.TaskListID));
             }
             output.AddRange(await (await mongoCollection.FindAsync(x => x.Owner == owner)).ToListAsync());
             output.RemoveAll(x => x == null);
@@ -101,7 +101,7 @@ namespace FDNTAPI.Controllers {
             CalendarEvent calendarEvent = await eventsMongoCollection.FirstOrDefaultAsync(x => x.Id == eventID);
             if (calendarEvent == null)
                 return this.Error(HttpStatusCode.NotFound, "There's no such CalendarEvent");
-            return this.Success(await mongoCollection.FirstOrDefaultAsync(x => x.ID == calendarEvent.TaskListID));
+            return this.Success(await mongoCollection.FirstOrDefaultAsync(x => x.Id == calendarEvent.TaskListID));
         }
 
         [HttpPost]
@@ -135,12 +135,12 @@ namespace FDNTAPI.Controllers {
             if (taskList == null || !taskList.AreValuesCorrect())
                 return this.Error(HttpStatusCode.UnprocessableEntity, "TaskList is null or it's properties are empty!");
 
-            TaskList currentValue = await mongoCollection.FirstOrDefaultAsync(x => x.ID == taskList.ID);
+            TaskList currentValue = await mongoCollection.FirstOrDefaultAsync(x => x.Id == taskList.Id);
             if (currentValue == null)
                 return this.Error(HttpStatusCode.BadRequest,
                     "Sended TaskList to update has altered Id! Unable to update value!");
 
-            UpdateResult result = await mongoCollection.UpdateOneAsync(x => x.ID == taskList.ID,
+            UpdateResult result = await mongoCollection.UpdateOneAsync(x => x.Id == taskList.Id,
                 Extensions.GenerateUpdateDefinition(currentValue, taskList));
 
             if (result.IsAcknowledged) return Ok();
@@ -153,9 +153,9 @@ namespace FDNTAPI.Controllers {
             [FromServices] IMongoCollection<DataModels.TaskLists.Task> mongoCollection) {
             if (task == null || !task.AreValuesCorrect())
                 return this.Error(HttpStatusCode.UnprocessableEntity, "Task is null or it's properties are empty!");
-            task.ID = Guid.NewGuid();
+            task.Id = Guid.NewGuid();
             await mongoCollection.InsertOneAsync(task);
-            return this.Success(task.ID);
+            return this.Success(task.Id);
         }
 
         [HttpDelete]
@@ -166,13 +166,13 @@ namespace FDNTAPI.Controllers {
             [FromServices] IMongoCollection<PersonTaskCompletionDeclaration> declarationsMongoCollection) {
             Guid taskID = Guid.Parse(data["taskId"]);
             string owner = data["owner"];
-            DataModels.TaskLists.Task task = await mongoCollection.FirstOrDefaultAsync(x => x.ID == taskID);
+            DataModels.TaskLists.Task task = await mongoCollection.FirstOrDefaultAsync(x => x.Id == taskID);
             if (task == null) return this.Error(HttpStatusCode.NotFound, "There's no such Task!");
-            TaskList taskList = await taskListMongoCollection.FirstOrDefaultAsync(x => x.ID == task.ID);
+            TaskList taskList = await taskListMongoCollection.FirstOrDefaultAsync(x => x.Id == task.OwnerId);
             if (taskList == null || (!taskList.Owner.Contains(owner) && !owner.Contains(taskList.Owner)))
                 return this.Error(HttpStatusCode.Forbidden, "You don't have access to that Task!");
 
-            DeleteResult result = await mongoCollection.DeleteOneAsync(x => x.ID == taskID);
+            DeleteResult result = await mongoCollection.DeleteOneAsync(x => x.Id == taskID);
             DeleteResult result2 = await declarationsMongoCollection.DeleteManyAsync(x => x.Task == taskID);
             if (result.IsAcknowledged && result2.IsAcknowledged) return Ok();
             else return this.Error(HttpStatusCode.InternalServerError, "Deletion failed for some reason!");
@@ -185,13 +185,13 @@ namespace FDNTAPI.Controllers {
             if (task == null || !task.AreValuesCorrect())
                 return this.Error(HttpStatusCode.UnprocessableEntity, "Task is null or it's properties are empty!");
 
-            DataModels.TaskLists.Task currentValue = await mongoCollection.FirstOrDefaultAsync(x => x.ID == task.ID);
+            DataModels.TaskLists.Task currentValue = await mongoCollection.FirstOrDefaultAsync(x => x.Id == task.Id);
 
             if (currentValue == null)
                 return this.Error(HttpStatusCode.UnprocessableEntity,
                     "Task's Id has been altered or such Task never existed! Update failed!");
 
-            UpdateResult result = await mongoCollection.UpdateOneAsync(x => x.ID == task.ID,
+            UpdateResult result = await mongoCollection.UpdateOneAsync(x => x.Id == task.Id,
                 Extensions.GenerateUpdateDefinition(currentValue, task));
 
             if (result.IsAcknowledged) return this.Success("");
@@ -216,17 +216,17 @@ namespace FDNTAPI.Controllers {
                 return this.Error(HttpStatusCode.UnprocessableEntity,
                     "PersonTaskCompletionDeclaration is null or it's properties are empty!");
             DataModels.TaskLists.Task task =
-                await tasksMongoCollection.FirstOrDefaultAsync(x => x.ID == declaration.Task);
+                await tasksMongoCollection.FirstOrDefaultAsync(x => x.Id == declaration.Task);
             if (task == null)
                 return this.Error(HttpStatusCode.BadRequest,
                     "PersonTaskCompletionDeclaration has been created for wrong Task!");
-            long howManyDeclarationForGiveTask = await mongoCollection.CountDocumentsAsync(x => x.Task == task.ID);
+            long howManyDeclarationForGiveTask = await mongoCollection.CountDocumentsAsync(x => x.Task == task.Id);
             if (howManyDeclarationForGiveTask >= task.MaximumCountOfPeopleWhoCanDoIt)
                 return this.Error(HttpStatusCode.BadRequest,
                     "You cannot complete that task, because there's maximum amount of people declared.");
-            declaration.ID = Guid.NewGuid();
+            declaration.Id = Guid.NewGuid();
             await mongoCollection.InsertOneAsync(declaration);
-            return this.Success(declaration.ID);
+            return this.Success(declaration.Id);
         }
 
         [HttpDelete]
@@ -255,15 +255,15 @@ namespace FDNTAPI.Controllers {
         [Route("declarations")]
         public async Task<IActionResult> UpdateDeclarationAsync(PersonTaskCompletionDeclaration declaration,
             [FromServices] IMongoCollection<PersonTaskCompletionDeclaration> mongoCollection) {
-            Guid declarationId = declaration.ID;
+            Guid declarationId = declaration.Id;
             if (declarationId == Guid.Empty)
                 return this.Error(HttpStatusCode.UnprocessableEntity, "Sent Guid is empty!");
-            var result = await mongoCollection.FirstOrDefaultAsync(x => x.ID == declarationId);
+            var result = await mongoCollection.FirstOrDefaultAsync(x => x.Id == declarationId);
             if (result == null)
                 return this.Error(HttpStatusCode.NotFound, "There's no such Declaration!");
             var newValue = result;
             newValue.IsCompleted = true;
-            var output = await mongoCollection.UpdateOneAsync(x => x.ID == declarationId,
+            var output = await mongoCollection.UpdateOneAsync(x => x.Id == declarationId,
                 Extensions.GenerateUpdateDefinition(result, newValue));
             return output.IsAcknowledged
                 ? Ok()

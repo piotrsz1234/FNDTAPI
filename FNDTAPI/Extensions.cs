@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
-using FDNTAPI.DataModels.Notifications;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using Newtonsoft.Json;
@@ -67,7 +66,7 @@ namespace FDNTAPI {
 
 		[NonAction]
 		public static IActionResult Success(this ControllerBase controller, object details) {
-			if (details is string && details == "") return controller.Ok();
+			if (details is string stringDetails && stringDetails == "") return controller.Ok();
 			return new JsonResult (details);
 		}
 
@@ -86,11 +85,6 @@ namespace FDNTAPI {
 			foreach (var item in collection) {
 				hashSet.Add (item);
 			}
-		}
-
-		public static async Task AddNotificationAsync (this ControllerBase controller, Notification notification, [FromServices] IMongoCollection<Notification> mongoCollection) {
-			if (!notification.AreValuesCorrect ()) return;
-			await mongoCollection.InsertOneAsync (notification);
 		}
 
 		public static IEnumerable<T> Subset<T>(this IEnumerable<T> enumerable, int startIndex, int length) {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using FDNTAPI.DataModels.Interfaces;
 using FDNTAPI.DataModels.Shared;
 using MongoDB.Bson;
@@ -12,7 +13,7 @@ namespace FDNTAPI.DataModels.Calendar {
 		/// </summary>
 		[BsonId]
 		[BsonRepresentation (BsonType.String)]
-		public Guid ID { get; set; }
+		public Guid Id { get; set; }
 		/// <summary>
 		/// Name of a Category.
 		/// </summary>

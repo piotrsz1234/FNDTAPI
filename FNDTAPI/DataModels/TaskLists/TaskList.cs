@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using FDNTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -15,7 +16,7 @@ namespace FDNTAPI.DataModels.TaskLists {
         /// </summary>
         [BsonId]
         [BsonRepresentation(BsonType.String)]
-        public Guid ID { get; set; }
+        public Guid Id { get; set; }
 
         /// <summary>
         /// Name of the Task List.
@@ -36,7 +37,7 @@ namespace FDNTAPI.DataModels.TaskLists {
         public bool AreValuesCorrect() {
             return !string.IsNullOrEmpty(Name);
         }
-
+        
     }
 
 }

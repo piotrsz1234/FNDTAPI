@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using FDNTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -16,12 +17,12 @@ namespace FDNTAPI.DataModels.Posts {
 		/// </summary>
 		[BsonId]
 		[BsonRepresentation(BsonType.String)]
-		public Guid ID { get; set; }
+		public Guid Id { get; set; }
 		/// <summary>
 		/// <see cref="Guid"/> of a current version of a <see cref="Post"/>.
 		/// </summary>
 		[BsonRepresentation(BsonType.String)]
-		public Guid PostID { get; set; }
+		public Guid PostId { get; set; }
 		/// <summary>
 		/// <see cref="DateTime"/> of a publication of this version.
 		/// </summary>
@@ -50,7 +51,7 @@ namespace FDNTAPI.DataModels.Posts {
 		/// </summary>
 		/// <param name="post">Which post is a base for creating instance.</param>
 		public OldVersionOfPost(Post post) {
-			PostID = post.ID;
+			PostId = post.Id;
 			PublishTime = post.PublishTime;
 			Html = post.Html;
 			ForWho = post.ForWho;
@@ -58,7 +59,8 @@ namespace FDNTAPI.DataModels.Posts {
 		}
 
 		public bool AreValuesCorrect () {
-			return !(PostID == Guid.Empty || string.IsNullOrEmpty (ForWho));
+			return !(PostId == Guid.Empty || string.IsNullOrEmpty (ForWho));
 		}
+
 	}
 }

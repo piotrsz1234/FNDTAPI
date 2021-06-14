@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using FDNTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Newtonsoft.Json;
 
 namespace FDNTAPI.DataModels.Posts {
 
@@ -19,7 +18,7 @@ namespace FDNTAPI.DataModels.Posts {
 		/// </summary>
 		[BsonRepresentation(BsonType.String)]
 		[BsonId]
-		public Guid ID { get; set; }
+		public Guid Id { get; set; }
 		/// <summary>
 		/// Title of a <see cref="Post"/>
 		/// </summary>
@@ -47,10 +46,17 @@ namespace FDNTAPI.DataModels.Posts {
 		/// Has <see cref="Post"/> been published?
 		/// </summary>
 		public bool IsPublished { get; set; }
+		/// <summary>
+		/// Contains information, when last change happened.
+		/// </summary>
+		[BsonRepresentation(BsonType.DateTime)]
+		public DateTime UpdateTime { get; set; }
 
 		public bool AreValuesCorrect() {
 			return !(string.IsNullOrWhiteSpace (ForWho) || string.IsNullOrWhiteSpace (Owner));
 		}
 
+		
+		
 	}
 }

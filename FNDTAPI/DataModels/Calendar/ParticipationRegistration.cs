@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using FDNTAPI.DataModels.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -15,7 +16,7 @@ namespace FDNTAPI.DataModels.Calendar {
 		/// </summary>
 		[BsonRepresentation (BsonType.String)]
 		[BsonId]
-		public Guid ID { get; set; }
+		public Guid Id { get; set; }
 		/// <summary>
 		/// Unique string, which represents user. In this case: Email.
 		/// </summary>
@@ -43,6 +44,6 @@ namespace FDNTAPI.DataModels.Calendar {
 				return false;
 			return true;
 		}
-
+		
 	}
 }
