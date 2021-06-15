@@ -39,9 +39,12 @@ namespace FDNTAPI.Controllers {
 
         [HttpPatch]
         [Route("posts/publish")]
-        public async Task<IActionResult> PublishChangesAsync(Post newPost) {
+        public async Task<IActionResult> PublishChangesAsync(Dictionary<string, object> changes) {
+            if (changes == null || changes.Count == 0 || !changes.ContainsKey("Id"))
+                return this.Error(HttpStatusCode.UnprocessableEntity,
+                    "Send changes data is empty or doesn't contain Id");
             Post currentValue =
-                await (await _postsMongoCollection.FindAsync(x => x.Id == newPost.Id)).FirstOrDefaultAsync();
+                await (await _postsMongoCollection.FindAsync(x => x.Id == Guid.Parse(changes["Id"] as string))).FirstOrDefaultAsync();
             if (currentValue == null)
                 return this.Error(HttpStatusCode.NotFound, "There's no such Post!");
             OldVersionOfPost oldVersion = new OldVersionOfPost(currentValue) {
@@ -49,8 +52,15 @@ namespace FDNTAPI.Controllers {
             };
             if (!currentValue.IsPublished)
                 await _oldPostsMongoCollection.InsertOneAsync(oldVersion);
-            if (newPost.Id == Guid.Empty) newPost.Id = Guid.NewGuid();
-            newPost.PublishTime = DateTime.Now;
+            var newPost = (Post) (currentValue as IDataModel).ApplyChanges(changes);
+            
+            if (newPost == null)
+                return this.Error(HttpStatusCode.BadRequest,
+                    "Changes contains properties, that Post does not contain!");
+            
+            if(!currentValue.IsPublished)
+                newPost.PublishTime = DateTime.Now;
+            else newPost.UpdateTime = DateTime.Now;
             newPost.IsPublished = true;
             UpdateResult result = await _postsMongoCollection.UpdateOneAsync(x => x.Id == newPost.Id,
                 Extensions.GenerateUpdateDefinition(currentValue, newPost));
@@ -89,14 +99,13 @@ namespace FDNTAPI.Controllers {
                 await _postsMongoCollection.FirstOrDefaultAsync(x => x.Id == Guid.Parse(changes["Id"] as string));
             if (currentValue == null || currentValue.IsPublished)
                 return this.Error(HttpStatusCode.NotFound,
-                    $"There's no such Post with Id: {changes["Id"]} or is published. If it's published, use 'post/publish'.");
-
-            currentValue.UpdateTime = DateTime.Now;
+                    $"There's no such Post with Id: {changes["Id"]} or it's is published. If it's published, use 'post/publish'.");
+            
             var newPost = (Post) ((IDataModel) currentValue).ApplyChanges(changes);
             if (newPost == null)
                 return this.Error(HttpStatusCode.BadRequest,
                     "Changes contains properties, that Post does not contain!");
-
+            newPost.UpdateTime = DateTime.Now;
             UpdateResult result = await _postsMongoCollection.UpdateOneAsync(x => x.Id == newPost.Id,
                 Extensions.GenerateUpdateDefinition(currentValue, newPost));
             if (result.IsAcknowledged)
