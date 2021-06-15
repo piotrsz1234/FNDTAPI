@@ -65,7 +65,7 @@ namespace FDNTAPI.Controllers {
             UpdateResult result = await _postsMongoCollection.UpdateOneAsync(x => x.Id == newPost.Id,
                 Extensions.GenerateUpdateDefinition(currentValue, newPost));
             if (result.IsAcknowledged)
-                return this.Success(newPost.Id);
+                return this.Success("");
             else return this.Error(HttpStatusCode.InternalServerError, "Publishing changes failed!");
         }
 
@@ -109,7 +109,7 @@ namespace FDNTAPI.Controllers {
             UpdateResult result = await _postsMongoCollection.UpdateOneAsync(x => x.Id == newPost.Id,
                 Extensions.GenerateUpdateDefinition(currentValue, newPost));
             if (result.IsAcknowledged)
-                return this.Success(newPost.Id);
+                return this.Success("");
             else return this.Error(HttpStatusCode.InternalServerError, "Updating of a post failed!");
         }
 

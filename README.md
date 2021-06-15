@@ -271,14 +271,33 @@ Important: DO NOT change value of a `CalendarEventCategory.ID`, otherwise you wi
 If request succeeded: Return nothing.
 
 #### 5) `/api/v1.0/Post/posts/publish`
-Publishes sent `Post` and if it's change, adds to history of edition.
-Important: DO NOT change value of a `CalendarEventCategory.ID`, otherwise you will not be able to update it's value!
+Publishes changes in already existing `Post` which is to be published or is already been published.
+You can use it to publish the `Post`.
 
-If request succeeded: Return nothing.
+Changes are to be sent as serialized `Dictionary <string, object>` where key is name of property.
+Also is should contain pair with `Id`. Example:
+```json
+{
+  "Id": "353bdd3e-64e9-486a-8714-7d56232cd148",
+  "Html": "Example..."
+}    
+```
+If field has not been changed, do not include it.
+
+`Id` is required to be sent, for server to be able to determine, which post is being edited.
+
+If request succeeded: Return 200 OK.
 
 #### 6) `/api/v1.0/Post/posts`
-Updates `Post`.
+Saves changes of a `Post` that has not been published.
+Changes are to be sent as serialized `Dictionary <string, object>` where key is name of property.
+Also is should contain pair with Id. Example:
+```json
+{
+  "Id": "353bdd3e-64e9-486a-8714-7d56232cd148",
+  "Html": "Example..."
+}    
+```
+If field has not been changed, do not include it.
 
-Important: DO NOT change value of a `CalendarEventCategory.ID`, otherwise you will not be able to update it's value!
-
-If request succeeded: Return nothing.
+If request succeeded: Return 200 OK.
