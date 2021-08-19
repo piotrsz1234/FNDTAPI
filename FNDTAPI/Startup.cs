@@ -1,3 +1,4 @@
+using System;
 using System.IO.Compression;
 using FDNTAPI.DataModels.Calendar;
 using FDNTAPI.DataModels.Posts;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 
 namespace FDNTAPI {
@@ -25,6 +27,15 @@ namespace FDNTAPI {
 			services.AddCors(x => x.AddDefaultPolicy(builder => {
 				builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
 			}));
+			services.AddSwaggerGen(options =>  
+			{  
+				options.SwaggerDoc("v2", new Microsoft.OpenApi.Models.OpenApiInfo  
+				{  
+					Title = "Place Info Service API",  
+					Version = "v2",  
+					Description = "Sample service for Learner",  
+				});  
+			}); 
 			AddingMongoDbToDependencyInjection (services);
 		}
 
@@ -46,6 +57,8 @@ namespace FDNTAPI {
 		public void Configure (IApplicationBuilder app, IWebHostEnvironment env) {
 			if (env.IsDevelopment ()) {
 				app.UseDeveloperExceptionPage ();
+				app.UseSwagger();  
+				app.UseSwaggerUI(options =>options.SwaggerEndpoint("/swagger/v2/swagger.json", "PlaceInfo Services")); 
 			}
 
 			app.UseHttpsRedirection ();

@@ -240,6 +240,8 @@ namespace FDNTAPI.Controllers {
             else return this.Error(HttpStatusCode.InternalServerError, "Failed to accept invitation!");
         }
 
+        [HttpPost]
+        [Route("invitations")]
         public async Task<IActionResult> InviteAsync(Dictionary<string, string> data,
             [FromServices] IMongoCollection<ParticipationRegistration> mongoCollection) {
             if (data == null || !data.ContainsKey("Who") || !data.ContainsKey("EventID") || !data.ContainsKey("Sender"))
